@@ -22,5 +22,7 @@ export 'src/planner/candidates.dart';
 export 'src/planner/candidates_config.dart';
 export 'src/planner/load_budget.dart';
 export 'src/planner/load_budget_config.dart';
+export 'src/planner/scoring.dart';
+export 'src/planner/scoring_config.dart';
 export 'src/planner/state_machine.dart';
 export 'src/planner/state_machine_config.dart';

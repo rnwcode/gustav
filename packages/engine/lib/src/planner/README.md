@@ -32,6 +32,14 @@ once consolidated/maintenance). Spec: `docs/specs/hart-filtern.md`
 (`Hitze × Hitzeempfindlichkeit`) — no weather data source exists yet
 (backlog V1.1).
 
+`scoring.dart` — `scoreActivities()` is step 5: weighs the admissible pool
+using the signals already attached to each `SkillFocus`/`NeedFocus`
+(priority, capped overdue weeks, need-gap coverage, new-skill bonus, breed
+suitability, an arousal penalty once recovery need is elevated, a
+recently-done penalty), returns it sorted with a deterministic tie-break
+on the activity ID. Spec: `docs/specs/scoren.md` (German — product
+documentation).
+
 ## Planner steps 1–8
 
 1. Build context — dog, household, weekly context, load budget, season
@@ -41,10 +49,10 @@ once consolidated/maintenance). Spec: `docs/specs/hart-filtern.md`
    (done, see `candidates.dart` above)
 4. Hard filter — age, prerequisites, equipment, restrictions, cooldown,
    safety (done except heat safety, see `activity_filter.dart` above)
-5. Score — weighted sum, deterministic tie-break on the ID (open — the
-   next step: scores the pool `activity_filter.dart` returns, using the
-   signals already attached to each `SkillFocus`/`NeedFocus`)
-6. Assign — day by day, load rules (open)
+5. Score — weighted sum, deterministic tie-break on the ID (done, see
+   `scoring.dart` above)
+6. Assign — day by day, load rules (open — the next step: walks the
+   sorted, scored pool day by day, respecting phase caps and load rules)
 7. Cross-check the week — need coverage, training cap, empty slot (open)
 8. Word it — frame and reasoning from structured data (open)
 
