@@ -1,5 +1,10 @@
 import { assertEquals } from '../planner/dev_deps.ts';
-import { loadActivityCatalog, loadPlannerConfig, loadSkillCatalog } from './loader.ts';
+import {
+  loadActivityCatalog,
+  loadPlannerConfig,
+  loadSkillCatalog,
+  loadStateMachineConfig,
+} from './loader.ts';
 
 // Integration test against the real repo content — doubles as an early
 // warning if content/schema/*.yaml and this loader drift apart.
@@ -31,4 +36,10 @@ Deno.test('loads the real planner config', async () => {
   const config = await loadPlannerConfig(PLANER_YAML);
   assertEquals(config.version >= 1, true);
   assertEquals(config.period.regularLengthDays, 7);
+});
+
+Deno.test('loads the real state machine config', async () => {
+  const config = await loadStateMachineConfig(PLANER_YAML);
+  assertEquals(config.order, ['duration', 'distance', 'distraction']);
+  assertEquals(config.intervals.get('building')?.start, 1);
 });

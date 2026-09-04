@@ -1,6 +1,11 @@
 import { assertEquals } from '../planner/dev_deps.ts';
-import type { LifeStage, NeedDimension, Restriction } from '../planner/models/enums.ts';
-import { parsePlanerConfigYaml } from './planer_yaml.ts';
+import type {
+  LifeStage,
+  NeedDimension,
+  Restriction,
+  SkillStatus,
+} from '../planner/models/enums.ts';
+import { parsePlanerConfigYaml, parseStateMachineConfigYaml } from './planer_yaml.ts';
 
 // Mirrors the real content/planer.yaml.
 const raw = {
@@ -147,4 +152,24 @@ Deno.test('parses content/planer.yaml into PlannerConfig', () => {
     heavyArousalThreshold: 2,
     maxArousalThreshold: 3,
   });
+});
+
+Deno.test('parses content/planer.yaml into StateMachineConfig', () => {
+  const config = parseStateMachineConfigYaml(raw);
+
+  assertEquals(config.increaseAfterSuccesses, 3);
+  assertEquals(config.decreaseAfterFailures, 2);
+  assertEquals(config.order, ['duration', 'distance', 'distraction']);
+  assertEquals(config.generalizeAtDistraction, 2);
+  assertEquals(config.successFactor, 1.8);
+
+  assertEquals(
+    config.intervals,
+    new Map<SkillStatus, { start: number; cap: number }>([
+      ['building', { start: 1, cap: 4 }],
+      ['generalizing', { start: 3, cap: 14 }],
+      ['consolidated', { start: 10, cap: 45 }],
+      ['maintenance', { start: 45, cap: 90 }],
+    ]),
+  );
 });

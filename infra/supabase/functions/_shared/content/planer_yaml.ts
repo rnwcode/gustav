@@ -1,9 +1,17 @@
-import type { LifeStage, NeedDimension, Restriction } from '../planner/models/enums.ts';
+import type {
+  LifeStage,
+  NeedDimension,
+  Restriction,
+  SkillStatus,
+} from '../planner/models/enums.ts';
 import type { PlannerConfig } from '../planner/plan_config.ts';
+import type { StateMachineConfig } from '../planner/steps/state_machine_config.ts';
 import {
+  dimensionFromGerman,
   lifeStageFromGerman,
   needDimensionFromGerman,
   restrictionFromGerman,
+  skillStatusFromGerman,
 } from './german_enums.ts';
 
 interface RawPhaseYaml {
@@ -31,6 +39,26 @@ interface RawBelastungsregelnYaml {
   readonly eingewoehnung_max_belastung: number;
 }
 
+interface RawIntervalYaml {
+  readonly start: number;
+  readonly deckel: number;
+}
+
+interface RawSpacedRepetitionYaml {
+  readonly faktor_bei_erfolg: number;
+  readonly aufbau: RawIntervalYaml;
+  readonly generalisierung: RawIntervalYaml;
+  readonly gefestigt: RawIntervalYaml;
+  readonly erhaltung: RawIntervalYaml;
+}
+
+interface RawStufenYaml {
+  readonly erhoehen_nach_erfolgen: number;
+  readonly senken_nach_misserfolgen: number;
+  readonly reihenfolge: readonly string[];
+  readonly generalisierung_ab_ablenkung: number;
+}
+
 interface RawGewichteYaml {
   readonly prioritaet: number;
   readonly ueberfaelligkeit: number;
@@ -50,6 +78,8 @@ interface RawPlanerYaml {
   readonly belastbarkeit_pro_tag: Readonly<Record<string, number>>;
   readonly einschraenkung_deckel: Readonly<Record<string, number>>;
   readonly erholungsbedarf: RawErholungsbedarfYaml;
+  readonly spaced_repetition: RawSpacedRepetitionYaml;
+  readonly stufen: RawStufenYaml;
   readonly gewichte: RawGewichteYaml;
   readonly kuerzlich_gemacht_tage: number;
   readonly bedarf_ziel: Readonly<Record<string, number>>;
@@ -127,5 +157,46 @@ export function parsePlanerConfigYaml(raw: unknown): PlannerConfig {
       heavyArousalThreshold: yaml.belastungsregeln.nach_belastung_ab,
       maxArousalThreshold: yaml.belastungsregeln.nie_zwei_tage_in_folge_belastung,
     },
+  };
+}
+
+/**
+ * Maps the already YAML-parsed `content/planer.yaml` document onto
+ * `StateMachineConfig` (sections `spaced_repetition` and `stufen`). Not
+ * used by `plan()` itself — the state machine runs ahead of the planner,
+ * when a check-in's assessment updates a `SkillState` (see
+ * `docs/specs/skill-zustandsautomat.md`, „Nicht dazu gehört" in
+ * `docs/specs/kandidaten-sammeln.md`). The simulator is this loader's
+ * first caller.
+ */
+export function parseStateMachineConfigYaml(raw: unknown): StateMachineConfig {
+  const yaml = raw as RawPlanerYaml;
+
+  const intervals = new Map<SkillStatus, { start: number; cap: number }>([
+    [skillStatusFromGerman('aufbau'), {
+      start: yaml.spaced_repetition.aufbau.start,
+      cap: yaml.spaced_repetition.aufbau.deckel,
+    }],
+    [skillStatusFromGerman('generalisierung'), {
+      start: yaml.spaced_repetition.generalisierung.start,
+      cap: yaml.spaced_repetition.generalisierung.deckel,
+    }],
+    [skillStatusFromGerman('gefestigt'), {
+      start: yaml.spaced_repetition.gefestigt.start,
+      cap: yaml.spaced_repetition.gefestigt.deckel,
+    }],
+    [skillStatusFromGerman('erhaltung'), {
+      start: yaml.spaced_repetition.erhaltung.start,
+      cap: yaml.spaced_repetition.erhaltung.deckel,
+    }],
+  ]);
+
+  return {
+    increaseAfterSuccesses: yaml.stufen.erhoehen_nach_erfolgen,
+    decreaseAfterFailures: yaml.stufen.senken_nach_misserfolgen,
+    order: yaml.stufen.reihenfolge.map(dimensionFromGerman),
+    generalizeAtDistraction: yaml.stufen.generalisierung_ab_ablenkung,
+    successFactor: yaml.spaced_repetition.faktor_bei_erfolg,
+    intervals,
   };
 }

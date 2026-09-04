@@ -2,9 +2,10 @@ import { parse as parseYaml } from 'https://deno.land/std@0.224.0/yaml/mod.ts';
 import type { Activity } from '../planner/models/activity.ts';
 import type { Skill } from '../planner/models/skill.ts';
 import type { PlannerConfig } from '../planner/plan_config.ts';
+import type { StateMachineConfig } from '../planner/steps/state_machine_config.ts';
 import { parseActivityYaml } from './activity_yaml.ts';
 import { parseSkillYaml } from './skill_yaml.ts';
-import { parsePlanerConfigYaml } from './planer_yaml.ts';
+import { parsePlanerConfigYaml, parseStateMachineConfigYaml } from './planer_yaml.ts';
 
 /**
  * Reads and YAML-parses every `*.yaml` file directly inside `dir`. Local
@@ -39,4 +40,10 @@ export async function loadActivityCatalog(dir: string | URL): Promise<Activity[]
 export async function loadPlannerConfig(path: string | URL): Promise<PlannerConfig> {
   const text = await Deno.readTextFile(path);
   return parsePlanerConfigYaml(parseYaml(text));
+}
+
+/** Loads `content/planer.yaml` into `StateMachineConfig`. */
+export async function loadStateMachineConfig(path: string | URL): Promise<StateMachineConfig> {
+  const text = await Deno.readTextFile(path);
+  return parseStateMachineConfigYaml(parseYaml(text));
 }

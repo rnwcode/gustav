@@ -8,11 +8,13 @@
 import type {
   ActivityType,
   BreedGroup,
+  Dimension,
   LifeStage,
   Location,
   NeedDimension,
   Restriction,
   SkillCategory,
+  SkillStatus,
 } from '../planner/models/enums.ts';
 
 function lookup<T extends string>(table: Record<string, T>, key: string, kind: string): T {
@@ -101,4 +103,25 @@ const NEED_DIMENSION: Record<string, NeedDimension> = {
 };
 export function needDimensionFromGerman(value: string): NeedDimension {
   return lookup(NEED_DIMENSION, value, 'need dimension');
+}
+
+const DIMENSION: Record<string, Dimension> = {
+  dauer: 'duration',
+  distanz: 'distance',
+  ablenkung: 'distraction',
+};
+export function dimensionFromGerman(value: string): Dimension {
+  return lookup(DIMENSION, value, 'dimension');
+}
+
+const SKILL_STATUS: Record<string, SkillStatus> = {
+  nicht_begonnen: 'notStarted',
+  aufbau: 'building',
+  generalisierung: 'generalizing',
+  gefestigt: 'consolidated',
+  erhaltung: 'maintenance',
+  ruht: 'dormant',
+};
+export function skillStatusFromGerman(value: string): SkillStatus {
+  return lookup(SKILL_STATUS, value, 'skill status');
 }
