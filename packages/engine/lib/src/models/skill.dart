@@ -1,37 +1,37 @@
 import 'package:meta/meta.dart';
 
 import 'enums.dart';
-import 'stufen.dart';
+import 'levels.dart';
 
-/// Etwas, das der Hund lernen kann. Schwierigkeit ist dreidimensional
-/// (Dauer, Distanz, Ablenkung) — Inhalt aus `content/skills/*.yaml`, siehe
+/// Something a dog can learn. Difficulty is three-dimensional (duration,
+/// distance, distraction) — content comes from `content/skills/*.yaml`, see
 /// `content/schema/skill.yaml`.
 @immutable
 class Skill {
   const Skill({
     required this.id,
     required this.name,
-    required this.kategorie,
-    this.voraussetzungen = const [],
-    required this.minAlterWochen,
-    required this.istKernskill,
-    required this.zielstufen,
-    required this.beschreibung,
+    required this.category,
+    this.prerequisites = const [],
+    required this.minAgeWeeks,
+    required this.isCoreSkill,
+    required this.targetLevels,
+    required this.description,
   });
 
   final String id;
   final String name;
-  final SkillKategorie kategorie;
+  final SkillCategory category;
 
-  /// Skill-IDs, die mindestens Status `generalisierung` haben müssen.
-  final List<String> voraussetzungen;
+  /// Skill IDs that must have reached at least `generalizing` status.
+  final List<String> prerequisites;
 
-  final int minAlterWochen;
+  final int minAgeWeeks;
 
-  /// Kernskills unterliegen keiner Sperrfrist — Grundsignale brauchen
-  /// Wiederholung (`docs/datenmodell.md`, Abschnitt Aktivität).
-  final bool istKernskill;
+  /// Core skills are exempt from the variance-group cooldown — basic cues
+  /// need repetition (`docs/datenmodell.md`, section Aktivität).
+  final bool isCoreSkill;
 
-  final Stufen zielstufen;
-  final String beschreibung;
+  final Levels targetLevels;
+  final String description;
 }

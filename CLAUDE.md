@@ -69,9 +69,26 @@ Nicht: ein Kurskatalog zum Abarbeiten. Nicht: ein durchgetakteter Tagesplan.
 
 ## Sprache
 
-Code, Bezeichner und Kommentare auf Deutsch, wo es die Fachdomäne betrifft
-(Skill, Aktivitaet, Wochenplan, Belastung) — sonst Englisch nach Dart-Konvention.
-Alle nutzersichtbaren Texte auf Deutsch.
+**Entwicklungssprache ist Englisch.** Code, Bezeichner, Kommentare,
+Commit-Nachrichten und Testbeschreibungen in `packages/`, `apps/` und `tool/`
+sind durchgängig Englisch — auch dort, wo es die Fachdomäne betrifft (also
+`Skill`, `Activity`, `WeeklyPlan`, `Load`, nicht `Aktivitaet`/`Wochenplan`/
+`Belastung`). Kein Denglisch, keine gemischten Bezeichner.
+
+**Nur der Content selbst bleibt Deutsch:** die YAML-Dateien in `content/`
+(Skills, Aktivitäten, `planer.yaml`) und alle nutzersichtbaren Texte in der
+App. Das ist Fachvokabular für Hundetrainerinnen und Nutzer, keine
+Entwicklungssprache.
+
+`docs/` (Produkt- und Prozessdokumentation, inklusive `docs/specs/`) bleibt
+ebenfalls Deutsch — das sind Texte für Menschen im Projekt, kein Code.
+
+**Spätere Mehrsprachigkeit mitdenken:** `id`-Felder im Content sind bereits
+sprachneutrale Slugs, keine deutschen Wörter — daran ändert sich nichts.
+Nutzersichtbare Textfelder (`titel`, `satz`, `beschreibung`, Rahmentexte
+usw.) sind die Stellen, die später pro Locale dazukommen. Kein Schema dafür
+vorab bauen — nur beim Content-Schema keine Annahme treffen, die eine
+spätere Übersetzung erschwert (z. B. Text nicht mit Fachdaten vermischen).
 
 ## Tonalität der nutzersichtbaren Texte
 

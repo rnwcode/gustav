@@ -1,26 +1,27 @@
 import 'package:meta/meta.dart';
 
-/// Einzige erlaubte Zeitquelle im Projekt.
+/// The only allowed time source in the project.
 ///
-/// `DateTime.now()` ist überall verboten und wird von der CI abgelehnt.
-/// Ohne diese Indirektion sind Simulator, Integrationstest und die
-/// Debug-Zeitreise im Gerät nicht baubar — das Produkt ist zeitbasiert.
+/// Reading the system clock directly is forbidden everywhere and rejected by
+/// CI. Without this indirection, the simulator, integration tests and the
+/// in-app debug time travel could not be built — the product is inherently
+/// time-based.
 abstract class Clock {
   const Clock();
 
-  /// Erzeugt eine Uhr, die die echte Systemzeit liefert.
+  /// Creates a clock that returns the real system time.
   ///
-  /// Der einzige Ort im Repo, an dem die Systemzeit gelesen werden darf.
+  /// The only place in the repo allowed to read the system clock.
   factory Clock.system() = _SystemClock;
 
-  /// Erzeugt eine feststellbare Uhr für Tests und den Simulator.
-  factory Clock.fixed(DateTime zeitpunkt) = FakeClock;
+  /// Creates a settable clock for tests and the simulator.
+  factory Clock.fixed(DateTime point) = FakeClock;
 
-  DateTime get jetzt;
+  DateTime get now;
 
-  /// Heutiger Tag ohne Uhrzeit — der Planer rechnet in Tagen, nicht Stunden.
-  DateTime get heute {
-    final n = jetzt;
+  /// Today without a time component — the planner reasons in days, not hours.
+  DateTime get today {
+    final n = now;
     return DateTime(n.year, n.month, n.day);
   }
 }
@@ -30,23 +31,23 @@ class _SystemClock extends Clock {
 
   @override
   // ignore: avoid_datetime_now
-  DateTime get jetzt => DateTime.now();
+  DateTime get now => DateTime.now();
 }
 
-/// Uhr, die sich stellen und weiterdrehen lässt.
+/// A clock that can be set and advanced.
 @visibleForTesting
 class FakeClock extends Clock {
-  FakeClock(this._jetzt);
+  FakeClock(this._now);
 
-  DateTime _jetzt;
+  DateTime _now;
 
   @override
-  DateTime get jetzt => _jetzt;
+  DateTime get now => _now;
 
-  /// Springt um [tage] Tage vorwärts. Für Simulator und Zeitreise.
-  void vor({int tage = 0, int stunden = 0}) {
-    _jetzt = _jetzt.add(Duration(days: tage, hours: stunden));
+  /// Jumps forward by [days] and [hours]. For the simulator and time travel.
+  void advanceBy({int days = 0, int hours = 0}) {
+    _now = _now.add(Duration(days: days, hours: hours));
   }
 
-  void stelleAuf(DateTime zeitpunkt) => _jetzt = zeitpunkt;
+  void setTo(DateTime point) => _now = point;
 }

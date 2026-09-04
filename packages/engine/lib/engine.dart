@@ -1,18 +1,18 @@
-/// Planer-Engine von Gustav.
+/// Gustav's planner engine.
 ///
-/// Reines Dart: keine Abhängigkeit auf Flutter, IO, Netzwerk oder Supabase.
-/// Zeit kommt ausschließlich über [Clock] oder als Parameter herein —
-/// Die Systemuhr direkt abzufragen ist im gesamten Repo verboten (siehe CLAUDE.md).
+/// Pure Dart: no dependency on Flutter, IO, network or Supabase. Time comes
+/// in exclusively through [Clock] or as a parameter — reading the system
+/// clock directly is forbidden everywhere in the repo (see CLAUDE.md).
 library engine;
 
 export 'src/clock.dart';
-export 'src/models/aktivitaet.dart';
+export 'src/models/activity.dart';
+export 'src/models/dog.dart';
+export 'src/models/dog_derivations.dart';
 export 'src/models/enums.dart';
-export 'src/models/haushalt.dart';
-export 'src/models/hund.dart';
-export 'src/models/hund_ableitungen.dart';
+export 'src/models/household.dart';
+export 'src/models/levels.dart';
 export 'src/models/skill.dart';
-export 'src/models/skill_stand.dart';
-export 'src/models/stufen.dart';
-export 'src/planer/zustandsautomat.dart';
-export 'src/planer/zustandsautomat_konfig.dart';
+export 'src/models/skill_state.dart';
+export 'src/planner/state_machine.dart';
+export 'src/planner/state_machine_config.dart';

@@ -1,95 +1,87 @@
-// Enums aus `docs/datenmodell.md`.
+// Enums from `docs/datenmodell.md`.
 //
-// Reine Aufzählungen, keine Logik. Wo die Fachdomäne betroffen ist, sind
-// Namen deutsch (CLAUDE.md, Abschnitt Sprache).
+// Plain enumerations, no logic. Development language is English (CLAUDE.md,
+// section Sprache); the domain content itself (content/*.yaml) stays German.
 
-/// Wochentag, unabhängig vom Kalenderdatum — der Planer rechnet in
-/// `trainingstage` und `planungstag`, nicht in ISO-Wochentagen.
-enum Wochentag {
-  montag,
-  dienstag,
-  mittwoch,
-  donnerstag,
-  freitag,
-  samstag,
-  sonntag
-}
+/// Day of the week, independent of a calendar date — the planner reasons in
+/// `trainingDays` and `planningDay`, not ISO weekdays.
+enum Weekday { monday, tuesday, wednesday, thursday, friday, saturday, sunday }
 
-enum Herkunft { zuechter, tierschutz, privat, unbekannt }
+enum Origin { breeder, shelter, private, unknown }
 
-enum Rassegruppe {
-  huete,
-  jagd,
-  begleit,
-  herdenschutz,
+enum BreedGroup {
+  herding,
+  hunting,
+  companion,
+  livestockGuardian,
   terrier,
-  wind,
-  nordisch,
+  sighthound,
+  nordic,
   molosser,
-  misch
+  mixed,
 }
 
-enum Groessenklasse { klein, mittel, gross }
+enum SizeClass { small, medium, large }
 
-enum Koerperbau { brachyzephal, dichteUnterwolle, langbeinig }
+enum BodyType { brachycephalic, denseUndercoat, longLegged }
 
-enum Einschraenkung { schonung, gelenke, senior, rekonvaleszenz }
+enum Restriction { protectiveCare, jointIssues, senior, recovery }
 
-enum Wohnsituation { wohnung, hausGarten }
+enum HousingType { apartment, houseWithGarden }
 
-enum Umgebung { stadt, vorort, land }
+enum Surroundings { city, suburb, countryside }
 
-enum Erfahrung { ersthund, erfahren }
+enum Experience { firstTimeOwner, experienced }
 
-/// `lebensphase` — abgeleitet aus Alter und Größenklasse, nie gespeichert.
-enum Lebensphase { welpe, junghund, pubertaet, erwachsen, senior }
+/// `lifeStage` — derived from age and size class, never stored.
+enum LifeStage { puppy, adolescent, puberty, adult, senior }
 
 enum SkillStatus {
-  nichtBegonnen,
-  aufbau,
-  generalisierung,
-  gefestigt,
-  erhaltung,
-  ruht
+  notStarted,
+  building,
+  generalizing,
+  consolidated,
+  maintenance,
+  dormant
 }
 
-enum SkillKategorie {
-  grundsignal,
-  leinenarbeit,
-  impulskontrolle,
-  alltagsroutine,
-  sozialverhalten,
-  kooperation,
+enum SkillCategory {
+  basicCue,
+  leashWork,
+  impulseControl,
+  dailyRoutine,
+  socialBehavior,
+  cooperation,
 }
 
-enum AktivitaetTyp { training, beschaeftigung, alltag, ruhe, pflege }
+enum ActivityType { training, enrichment, everyday, rest, care }
 
-enum Ort { drinnen, draussen, unterwegs, egal }
+enum Location { indoors, outdoors, onTheGo, any }
 
-/// Ergebnis einer Bewertung — sowohl im täglichen Tippen als auch im
-/// Rückblick am Planungstag.
-enum Ergebnis { klappte, soHalb, nochNicht, uebersprungen, nichtGeschafft }
+/// Outcome of an assessment — both in the daily tap-to-rate and in the
+/// weekly review.
+enum Outcome { succeeded, partial, notYet, skipped, notCompleted }
 
-enum AbsichtChip {
-  leinen,
-  rueckruf,
-  ruhe,
-  alleinbleiben,
-  besuch,
-  wenigZeit,
-  urlaub,
-  mehrKopfarbeit,
-  weissNicht,
+enum IntentChip {
+  leash,
+  recall,
+  calm,
+  homeAlone,
+  visitors,
+  shortOnTime,
+  vacation,
+  moreMentalWork,
+  notSure,
 }
 
-enum RueckblickChip { vielLos, krank, reise, tierarzt, allesRuhig }
+enum ReviewChip { busyWeek, illness, travel, vetVisit, calmWeek }
 
-/// Entscheidet, ob die App „du hattest gesagt" sagen darf (siehe
-/// `docs/produkt.md`, Tonalität).
-enum WochenkontextQuelle { chip, freitext, standard }
+/// Decides whether the app is allowed to say „you told us" (see
+/// `docs/produkt.md`, section Tonalität).
+enum WeeklyContextSource { chip, freeText, fallback }
 
-/// Die drei D: Dauer, Distanz, Ablenkung — immer nur eins gleichzeitig
-/// erhöhen (`docs/datenmodell.md`, Abschnitt „Skills und die drei D").
-enum Dimension { dauer, distanz, ablenkung }
+/// The three Ds: duration, distance, distraction — only ever raise one at a
+/// time (`docs/datenmodell.md`, section „Skills und die drei D").
+enum Dimension { duration, distance, distraction }
 
-enum BedarfDimension { koerperlich, kopfarbeit, nase, sozial, erholung }
+enum NeedDimension { physical, mentalWork, scent, social, recovery }
