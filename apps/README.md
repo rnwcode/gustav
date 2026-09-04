@@ -1,15 +1,20 @@
 # Apps
 
-`app/` wird lokal erzeugt, weil `flutter create` die Plattformordner für
+`gustav/` wird lokal erzeugt, weil `flutter create` die Plattformordner für
 iOS und Android generiert:
 
 ```bash
-mkdir -p app && cd app
-flutter create --org de.hundeplaner --project-name hundeplaner \
-  --platforms=ios,android .
+cd apps
+flutter create --org com.isjust --project-name gustav \
+  --platforms=ios,android gustav
 ```
 
-Danach in `app/pubspec.yaml` die Engine einhängen:
+**Die Application-ID ist `com.isjust.gustav`** — auf beiden Plattformen
+dieselbe. Sie lässt sich nach dem ersten Store-Upload nie wieder ändern.
+Der Anzeigename ist davon unabhängig und jederzeit änderbar; Bindestriche
+sind in Android-IDs verboten, deshalb `isjust` statt `is-just`.
+
+Danach in `gustav/pubspec.yaml` die Engine einhängen:
 
 ```yaml
 dependencies:

@@ -25,7 +25,7 @@ Nicht: ein Kurskatalog zum Abarbeiten. Nicht: ein durchgetakteter Tagesplan.
 3. Zustandsverwaltung ausschließlich Riverpod. Kein `setState` in
    Feature-Code, kein zweites State-Management "nur hier kurz".
 
-4. Ordner feature-first: `apps/app/lib/features/<feature>/{data,domain,ui}`.
+4. Ordner feature-first: `apps/gustav/lib/features/<feature>/{data,domain,ui}`.
    Kein globales `widgets/` oder `utils/`.
 
 5. Content ist Daten, nie Code. Übungen und Skills leben als YAML in
@@ -80,3 +80,10 @@ was sie selbst geplant hat, was abgehakt wurde, was der Nutzer gesagt hat.
 Kein Streak-Druck, keine Ermahnung nach einer Pause, keine Schuldrhetorik.
 Der Nutzer trägt nie etwas ein, damit die App rechnen kann — er drückt einen
 Knopf, weil er selbst etwas davon hat.
+
+**Gustav spricht nicht.** Gustav ist der Hund auf dem Icon und in den
+Illustrationen — das Gesicht des Produkts, nicht seine Stimme. Die App redet
+nie als Gustav, gibt keine Ratschläge in seiner Rolle und hat keine
+Maskottchen-Sprechblasen. Im Plan steht immer der Name des echten Hundes.
+Eine Charakterstimme wäre genau die Bevormundung, die das Produkt vermeiden
+will — nur mit Kuschelfaktor.

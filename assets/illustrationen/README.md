@@ -1,8 +1,9 @@
 # Illustrationen
 
-Einstrich-Tusche: ein Hund, mit einer durchgehenden kalligraphischen Linie
-gezeichnet. Bewusst rasse-uneindeutig — kein Fellansatz, keine Farbe, keine
-Größe, über die sich jemand ärgern kann.
+Einstrich-Tusche: Gustav — ein Hund, mit einer durchgehenden kalligraphischen Linie
+gezeichnet. Bewusst rasse-uneindeutig — kein Fellansatz, keine Farbe, keine Größe, über
+die sich jemand ärgern kann. Gustav ist das Gesicht des Produkts, nicht seine
+Stimme: Er taucht auf, er redet nicht (CLAUDE.md, Tonalität).
 
 ## Regeln
 

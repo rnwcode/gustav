@@ -67,8 +67,8 @@ jobs:
         with:
           channel: stable
       - run: flutter pub get
-        working-directory: apps/app
-        continue-on-error: true   # bis apps/app existiert
+        working-directory: apps/gustav
+        continue-on-error: true   # bis apps/gustav existiert
       - run: flutter test
-        working-directory: apps/app
+        working-directory: apps/gustav
         continue-on-error: true
