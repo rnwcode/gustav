@@ -58,6 +58,12 @@ at least one slot is empty, and corrects the first failing check with a single s
 one, and never re-running step 6). Spec: `docs/specs/gegenpruefen.md` (German — product
 documentation).
 
+`wording.ts` — `buildSlots()` is step 8: attaches a machine-readable `Reason` to every assignment
+(`newSkill` > `dueRefresher` > `priority` > `needGap`, falling back to `recoveryNeed` when none of
+those signals apply), turning `DayAssignment[]` into `Slot[]`. Spec: `docs/specs/texten.md` (German
+— product documentation). Deliberately produces no prose — the explaining sentence is a template
+(MVP) or an LLM (later), outside this function.
+
 ## Planner steps 1–8
 
 1. Build context — dog, household, weekly context, load budget (done, see `context.ts` above;
@@ -70,7 +76,8 @@ documentation).
 5. Score — weighted sum, deterministic tie-break on the ID (done, see `scoring.ts` above)
 6. Assign — day by day, load rules (done, see `assignment.ts` above)
 7. Cross-check the week — need coverage, training cap, empty slot (done, see `cross_check.ts` above)
-8. Word it — frame and reasoning from structured data (open)
+8. Word it — frame and reasoning from structured data (done, see `wording.ts` above; the
+   frame/sentence prose itself stays outside this function, see its spec)
 
 The weights in step 5 are tuned, not derived. They only change together with a simulator run
 (`simulate.ts`, one level up).
