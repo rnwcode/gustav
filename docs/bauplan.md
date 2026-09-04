@@ -39,7 +39,7 @@ höchstens den lokalen Supabase-Stack), in unter zwei Sekunden.
 |---|---|---|
 | 1 Engine | `deno test --allow-read infra/supabase/functions` | Zustandsautomat, Intervalle, Filter, Fixtures |
 | 2 Content | `dart run tool/validate.dart` | Schema, Referenzen, Abdeckungslücken, `planer.yaml` |
-| 3 Simulator | `deno run infra/supabase/functions/_shared/planner/simulate.ts` | 12 Wochen als Text — liest sich das gut? |
+| 3 Simulator | `deno run --allow-read infra/supabase/functions/_shared/planner/simulate.ts` | 12 Wochen als Text — liest sich das gut? |
 | 4 Widgets | `flutter test` | Screens, Goldens hell und dunkel |
 | 5 Integration | `flutter test integration_test` | Onboarding → Periode 1 (gegen lokale Edge Function) → Check-in → Periode 2 |
 | 6 Gerät | Debug-Menü | Zeitreise (Server-Fake-Clock), Periode springen, Zustand zurücksetzen |
@@ -83,7 +83,7 @@ Produkt im Kern fertig; alles Weitere ist Oberfläche und Content.
 - Die acht Fixtures aus `datenmodell.md`
 
 **Fertig, wenn** `deno test --allow-read infra/supabase/functions &&
-deno run infra/supabase/functions/_shared/planner/simulate.ts --check` grün ist
+deno run --allow-read infra/supabase/functions/_shared/planner/simulate.ts --check` grün ist
 und zwölf simulierte Wochen gelesen wurden, ohne zusammenzuzucken.
 
 ## Phase 2 — App als Client (Woche 3–7)

@@ -14,10 +14,12 @@ households) so it can never be mistaken for production content or a real user.
   distraction ranges for every fixture skill.
 - `scenarios.ts` — five named dog/household/check-in bundles (`FixtureScenario`), matching the five
   fixtures `docs/datenmodell.md` describes under „Test-Fixtures" (Welpe Periode 1, Junghund in der
-  Pubertät, Volle Periode, Erwachsener Hund alles gefestigt, Schonzeit). The three period-length
-  fixtures listed there (Mittwochsstart, Samstagsstart, Wiedereinstieg) are about `today`'s weekday,
-  not the dog — the simulator exercises those by varying `today` against any of the five scenarios
-  here, rather than needing separate dog fixtures.
+  Pubertät, Volle Periode, Erwachsener Hund alles gefestigt, Schonzeit). Each carries a short `slug`
+  (`welpe11`, `junghund43`, `ausgelastet`, `erwachsen-gefestigt`, `schonzeit`) for
+  `simulate.ts --hund <slug>`. The three period-length fixtures listed there (Mittwochsstart,
+  Samstagsstart, Wiedereinstieg) are about `today`'s weekday, not the dog — the simulator exercises
+  those by varying `today` against any of the five scenarios here, rather than needing separate dog
+  fixtures.
 - `scenarios_test.ts` — runs `plan()` against every scenario with the real `content/planer.yaml`
   config (loaded through `../../content/loader.ts`). A smoke test, and a consistency check between
   these fixtures and the planner/content-loader.

@@ -13,9 +13,9 @@ Planer-Logik, die er durchspielt:
 
 | Kommando | Prüft |
 |---|---|
-| `deno run infra/supabase/functions/_shared/planner/simulate.ts` | 12 Wochen als Text — liest sich das wie ein guter Plan? |
-| `deno run infra/supabase/functions/_shared/planner/simulate.ts --check` | Invarianten über 20 synthetische Hunde |
-| `deno run infra/supabase/functions/_shared/planner/simulate.ts --gegen <datei>` | zwei Konfigurationsstände nebeneinander |
+| `deno run --allow-read infra/supabase/functions/_shared/planner/simulate.ts` | 12 Wochen als Text — liest sich das wie ein guter Plan? |
+| `deno run --allow-read infra/supabase/functions/_shared/planner/simulate.ts --check` | Invarianten über 20 synthetische Hunde |
+| `deno run --allow-read infra/supabase/functions/_shared/planner/simulate.ts --gegen <datei>` | zwei Konfigurationsstände nebeneinander |
 
 Der Simulator ist das wichtigste Entwurfswerkzeug des Projekts. Er findet
 Fehler, die kein Unit-Test findet: dreimal dasselbe Suchspiel in Woche 6,
@@ -30,7 +30,7 @@ Steht ein Gewicht fest verdrahtet im Code der Edge Function, lässt sich der
 Vergleichsmodus nicht bauen.
 
 ```bash
-deno run infra/supabase/functions/_shared/planner/simulate.ts \
+deno run --allow-read infra/supabase/functions/_shared/planner/simulate.ts \
     --hund junghund43 --profil unregelmaessig \
     --konfig content/planer.yaml \
     --gegen  content/varianten/mehr-ruhe.yaml

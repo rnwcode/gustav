@@ -7,6 +7,10 @@ import type { SkillState } from '../models/skill_state.ts';
 /** Everything `plan()` needs except the catalogs and config, which the simulator supplies. */
 export interface FixtureScenario {
   readonly name: string;
+
+  /** Short, CLI-friendly id — `simulate.ts --hund <slug>`. */
+  readonly slug: string;
+
   readonly today: Date;
   readonly dog: Dog;
   readonly household: Household;
@@ -57,6 +61,7 @@ const DEFAULT_WEEKLY_CONTEXT: WeeklyContext = {
 export const FIXTURE_SCENARIOS: readonly FixtureScenario[] = [
   {
     name: 'Welpe, Periode 1',
+    slug: 'welpe11',
     today: TODAY,
     dog: {
       id: 'fixture-dog-puppy',
@@ -84,6 +89,7 @@ export const FIXTURE_SCENARIOS: readonly FixtureScenario[] = [
   },
   {
     name: 'Junghund in der Pubertät',
+    slug: 'junghund43',
     today: TODAY,
     dog: {
       id: 'fixture-dog-puberty',
@@ -123,6 +129,7 @@ export const FIXTURE_SCENARIOS: readonly FixtureScenario[] = [
   },
   {
     name: 'Volle Periode',
+    slug: 'ausgelastet',
     today: TODAY,
     dog: {
       id: 'fixture-dog-busy',
@@ -151,6 +158,7 @@ export const FIXTURE_SCENARIOS: readonly FixtureScenario[] = [
   },
   {
     name: 'Erwachsener Hund, alles gefestigt',
+    slug: 'erwachsen-gefestigt',
     today: TODAY,
     dog: {
       id: 'fixture-dog-adult',
@@ -192,6 +200,7 @@ export const FIXTURE_SCENARIOS: readonly FixtureScenario[] = [
   },
   {
     name: 'Schonzeit',
+    slug: 'schonzeit',
     today: TODAY,
     dog: {
       id: 'fixture-dog-recovery',

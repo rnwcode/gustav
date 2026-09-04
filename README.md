@@ -41,8 +41,8 @@ npm i -g supabase && supabase start
 ```bash
 deno test --allow-read infra/supabase/functions   # Planer-Logik + Content-Loader, < 2 s
 dart run tool/validate.dart                 # Content: Schema, Referenzen, Lücken
-deno run infra/supabase/functions/_shared/planner/simulate.ts          # 12 Wochen als Text lesen
-deno run infra/supabase/functions/_shared/planner/simulate.ts --check  # Invarianten über 20 synthetische Hunde
+deno run --allow-read infra/supabase/functions/_shared/planner/simulate.ts          # 12 Wochen als Text lesen
+deno run --allow-read infra/supabase/functions/_shared/planner/simulate.ts --check  # Invarianten über 20 synthetische Hunde
 cd apps/gustav && flutter test              # Widgets und Goldens
 ```
 
