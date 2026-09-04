@@ -39,9 +39,10 @@ Nicht: ein Kurskatalog zum Abarbeiten. Nicht: ein durchgetakteter Tagesplan.
 7. Jede neue Funktion beginnt mit einer Spec in `docs/specs/` und einem
    fehlschlagenden Test. Erst dann Implementierung.
 
-8. Supabase läuft selbst gehostet. Keine cloud-exklusiven Features
-   verwenden — alles muss gegen den lokalen Compose-Stack laufen.
-   Darunter liegt Postgres; die Tür in beide Richtungen bleibt offen.
+8. Supabase läuft gehostet, Region Frankfurt. Trotzdem keine
+   cloud-exklusiven Features verwenden: Alles muss auch gegen den lokalen
+   Stack (`supabase start`) laufen. Darunter liegt Postgres — die Tür zum
+   Selbsthosten bleibt damit jederzeit offen, ohne Umbau.
 
 9. App ist local-first. Sie funktioniert vollständig offline;
    Sync ist eine Ergänzung, keine Voraussetzung.

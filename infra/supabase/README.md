@@ -1,60 +1,57 @@
-# Supabase, selbst gehostet
+# Supabase
 
-Drei Stufen: lokal → Staging → Produktion. Alles läuft gegen denselben
-Compose-Stack; unterschieden wird nur über `.env`.
+Gehostet, Region **Frankfurt (eu-central-1)**. Zwei Projekte: Staging und
+Produktion. Lokal wird trotzdem gegen den Docker-Stack der CLI entwickelt —
+die Cloud fasst man erst an, wenn lokal alles läuft.
 
-**Regel:** keine cloud-exklusiven Features verwenden. Darunter liegt Postgres,
-und solange das gilt, ist ein Umzug in beide Richtungen eine Sache von Stunden.
+**Regel 8 aus CLAUDE.md gilt weiter:** keine cloud-exklusiven Features
+verwenden. Alles muss auch gegen `supabase start` laufen. Darunter liegt
+Postgres; damit bleibt der Wechsel zum Selbsthosten jederzeit möglich —
+Migrationen, Seeds und RLS-Policies wandern unverändert mit.
 
-## Lokal einrichten
-
-Die offizielle Compose-Datei wird bewusst **nicht** eingecheckt — sie ändert
-sich mit jeder Supabase-Version, und eine handkopierte Fassung veraltet still.
-Stattdessen holen:
-
-```bash
-cd infra/supabase
-git clone --depth 1 https://github.com/supabase/supabase .supabase-upstream
-cp .supabase-upstream/docker/docker-compose.yml .
-cp .env.example .env          # dann Werte setzen, siehe unten
-docker compose up -d
-```
-
-Studio läuft danach auf http://localhost:8000.
+## Lokal
 
 ```bash
-dart run ../../tool/seed.dart   # Katalog aus content/ einspielen
+npm i -g supabase             # oder: scoop install supabase
+supabase start                # Docker-Stack, Studio auf http://localhost:54323
+supabase db reset             # Migrationen + Seeds frisch anwenden
+dart run ../../tool/seed.dart # Katalog aus content/ einspielen
 ```
 
 ## Migrationen
 
-Liegen als nummerierte SQL-Dateien in `migrations/` und werden in
-Reihenfolge angewendet. Niemals eine bereits angewendete Datei ändern —
-immer eine neue anlegen.
+Nummerierte SQL-Dateien in `migrations/`, in Reihenfolge angewendet. Eine
+bereits angewendete Datei wird nie geändert — immer eine neue anlegen.
 
-Migrationen werden **nie auf der Produktion getestet**. Dafür gibt es Staging.
+```bash
+supabase migration new <name>       # neue Datei anlegen
+supabase db reset                   # lokal prüfen
+supabase link --project-ref <ref>   # Ziel wählen: Staging oder Produktion
+supabase db push                    # anwenden
+```
 
-## Was beim Selbsthosten nicht optional ist
+Migrationen werden **nie zuerst auf der Produktion angewendet.** Erst Staging,
+dann nach Sichtprüfung Produktion. Das übernimmt später `deploy.yml`.
 
-Der Self-Hosted-Stack hat keine Parität mit der gehosteten Variante. Was dort
-im Preis enthalten ist, baust du hier selbst:
+## Was du trotz gehostet nicht auslagern kannst
 
-1. **Backups außer Haus** — pgBackRest oder wal-g auf S3-kompatiblen Speicher,
-   plus ein **durchgeführter Restore-Test**. Ein Backup, das nie zurückgespielt
-   wurde, ist keines. Das ist die Abnahme von Phase 3, nicht das Deployment.
-2. **Monitoring mit Alarm aufs Handy** — Erreichbarkeit, Plattenplatz,
-   Postgres-Verbindungen.
-3. **Staging-Instanz** als eigener Stack.
-4. **Reverse Proxy mit automatischem TLS** (Caddy oder Traefik), Firewall,
-   fail2ban, automatische Sicherheitsupdates.
-5. **Secrets nicht im Repo** — sops/age oder ein Secret-Manager.
-6. **SMTP-Anbieter**, sobald es Accounts gibt (Brevo, Mailjet, Postmark).
+Der Anbieter macht Backups — aber ob du daraus tatsächlich wieder
+hochkommst, weiß nur, wer es einmal gemacht hat:
+
+1. **Restore-Test einmal durchspielen**, bevor echte Nutzerdaten drin sind.
+   Backup einspielen, App dagegen laufen lassen, Zeit stoppen. Das bleibt die
+   Abnahme von Phase 3.
+2. **Bezahlter Plan vor dem Launch.** Kostenlose Projekte werden bei
+   Inaktivität pausiert und haben keine tägliche Sicherung — für Produktion
+   untauglich. Point-in-Time-Recovery ist ein Zusatz und für ein Produkt mit
+   monatelanger Nutzerhistorie die Überlegung wert.
+3. **Eigener Export.** Ein wöchentlicher `pg_dump` in deinen eigenen Speicher
+   kostet fast nichts und ist die Versicherung gegen den Fall, dass du das
+   Konto verlierst statt die Daten.
+4. **Zugangsdaten nicht im Repo** — `.env` ist in `.gitignore`, Service-Role-
+   Schlüssel gehören ausschließlich serverseitig.
 
 ## Vorgenerierte Wochentexte
 
-Statt selbst gehosteter Edge Functions ein schlichter Cron-Container neben
-dem Stack. Du kontrollierst die Maschine ohnehin, und ein Skript, das nachts
-einmal durchläuft, ist deutlich weniger fummelig als der Deno-Relay.
-
-LLM-Aufrufe passieren ausschließlich hier, nie in der App. Keine
-personenbezogenen Daten im Prompt.
+Als geplante Edge Function. LLM-Aufrufe passieren ausschließlich dort, nie in
+der App — keine Schlüssel im Client, keine personenbezogenen Daten im Prompt.

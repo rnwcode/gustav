@@ -1,16 +1,17 @@
 # Deployment — Platzhalter, aktiv ab Phase 3.
 #
 # Gedachter Ablauf:
-#   1. Migrationen gegen Staging anwenden, Smoke-Test
-#   2. Nach manueller Freigabe: Migrationen gegen Produktion
-#   3. tool/seed.dart für den Content
+#   1. supabase link auf das Staging-Projekt, db push, Smoke-Test
+#   2. tool/seed.dart für den Content
+#   3. nach manueller Freigabe dasselbe gegen Produktion
 #
-# Zugang zum Server über SSH-Key aus den Repository-Secrets.
+# Zugangsdaten aus den Repository-Secrets: SUPABASE_ACCESS_TOKEN,
+# STAGING_PROJECT_REF, PROD_PROJECT_REF.
+#
 # Die Produktion wird nie ohne vorherigen Staging-Durchlauf angefasst.
-#
-# Merke: Vor dem ersten echten Deployment steht der Restore-Test —
-# ein Backup auf eine frische Maschine zurückspielen und die App
-# dagegen laufen lassen. Das ist die Abnahme von Phase 3.
+# Und vor dem ersten echten Deployment steht der Restore-Test — auch bei
+# gehostetem Supabase: Der Anbieter sichert, aber ob du wieder hochkommst,
+# weiß nur, wer es einmal gemacht hat.
 
 name: Deploy
 

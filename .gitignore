@@ -25,10 +25,9 @@ apps/app/**/GeneratedPluginRegistrant.*
 *.pem
 *.key
 
-# Supabase (self-hosted)
-infra/supabase/volumes/
-infra/supabase/docker-compose.yml
+# Supabase
 infra/supabase/.env
+supabase/.temp/
 
 # Sonstiges
 .DS_Store
