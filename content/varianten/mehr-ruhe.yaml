@@ -1,0 +1,74 @@
+# Variante: deutlich mehr Erholung, weniger Training.
+#
+# Frage, die sie beantworten soll: Liest sich eine ruhigere Woche für einen
+# unregelmäßigen Nutzer besser — oder wirkt die App dann leer und überflüssig?
+#
+# Nur die abweichenden Werte sind hier kommentiert; ansonsten ist die Datei
+# eine vollständige Kopie von content/planer.yaml.
+
+version: 1-e1
+
+perioden:
+  laenge_tage: 7
+  erste_periode_min_tage: 5
+  erste_periode_max_tage: 10
+  leere_slots_min: 2                          # war 1
+  leere_slots_bei_erholungsbedarf_hoch: 3     # war 2
+
+phasen:
+  welpe:      { aktive_slots: 3, training: 2 }   # war 4/2
+  junghund:   { aktive_slots: 4, training: 2 }   # war 5/3
+  pubertaet:  { aktive_slots: 5, training: 3 }   # war 6/4
+  erwachsen:  { aktive_slots: 5, training: 3 }   # war 6/4
+  senior:     { aktive_slots: 4, training: 2 }   # war 5/3
+
+belastbarkeit_pro_tag:
+  welpe: 1.0
+  junghund: 1.6
+  pubertaet: 1.8
+  erwachsen: 2.0
+  senior: 1.4
+einschraenkung_deckel:
+  rekonvaleszenz: 0.6
+  schonung: 1.0
+erholungsbedarf:
+  mittel_ab_quote: 0.55                       # war 0.7 — schlägt früher an
+  hoch_ab_quote: 0.85                         # war 1.0
+
+spaced_repetition:
+  faktor_bei_erfolg: 1.8
+  aufbau:          { start: 1,  deckel: 4 }
+  generalisierung: { start: 3,  deckel: 14 }
+  gefestigt:       { start: 10, deckel: 45 }
+  erhaltung:       { start: 45, deckel: 90 }
+
+stufen:
+  erhoehen_nach_erfolgen: 3
+  senken_nach_misserfolgen: 2
+  reihenfolge: [dauer, distanz, ablenkung]
+  generalisierung_ab_ablenkung: 2
+
+gewichte:
+  prioritaet: 3.0
+  ueberfaelligkeit: 2.0
+  ueberfaelligkeit_deckel: 3.0
+  bedarfsluecke: 2.0
+  neuer_skill: 1.0
+  eignung_rassegruppe: 1.0
+  belastung_bei_erholungsbedarf: -4.5         # war -3.0
+  kuerzlich_gemacht: -2.0
+kuerzlich_gemacht_tage: 10
+
+bedarf_ziel:
+  koerperlich: 5                              # war 6
+  kopfarbeit: 6
+  nase: 5
+  sozial: 3
+  erholung: 8                                 # war 6
+
+belastungsregeln:
+  nie_zwei_tage_in_folge_belastung: 2         # war 3 — strenger
+  nach_belastung_ab: 2
+  eingewoehnung_wochen: 6
+  eingewoehnung_max_ablenkung: 1
+  eingewoehnung_max_belastung: 2
