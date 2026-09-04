@@ -1,8 +1,8 @@
 # Hart filtern (Planer, Schritt 4)
 
 *Hinweis: Diese Spec bleibt Deutsch (CLAUDE.md, Abschnitt Sprache). Die
-Codebeispiele nennen die tatsächlichen, englischen Bezeichner aus
-`packages/engine`.*
+Codebeispiele nennen die tatsächlichen Bezeichner aus
+`infra/supabase/functions/_shared/planner/` (TypeScript).*
 
 ## Warum
 
@@ -20,21 +20,21 @@ Signale, die eine Historie voraussetzen (`lastUsedByVarianceGroup`), löst
 der Aufrufer auf, nicht diese Funktion — analog zu `evaluateLoadBudget` und
 `collectCandidates`.
 
-```dart
-List<Activity> filterActivities({
-  required List<Activity> catalog,
-  required CandidatePool candidates,
-  required Set<String> coreSkillIds,
-  required int dogAgeWeeks,
-  required Set<Restriction> restrictions,
-  required int weeksSinceArrival,
-  required List<String> householdEquipment,
-  required int householdSize,
-  required List<Location> allowedLocations,   // WeeklyContext.constraints.locations
-  required DateTime today,
-  required Map<String, DateTime> lastUsedByVarianceGroup,
-  required ActivityFilterConfig config,
-})
+```typescript
+function filterActivities(args: {
+  catalog: Activity[];
+  candidates: CandidatePool;
+  coreSkillIds: Set<string>;
+  dogAgeWeeks: number;
+  restrictions: Set<Restriction>;
+  weeksSinceArrival: number;
+  householdEquipment: string[];
+  householdSize: number;
+  allowedLocations: Location[];   // WeeklyContext.constraints.locations
+  today: Date;
+  lastUsedByVarianceGroup: Map<string, Date>;
+  config: ActivityFilterConfig;
+}): Activity[]
 ```
 
 Eine Aktivität übersteht den Filter nur, wenn **alle** zutreffenden Regeln
@@ -43,29 +43,29 @@ erfüllt sind:
 | # | Regel | Bedingung zum Ausschluss |
 |---|---|---|
 | 1 | Alter | `dogAgeWeeks < minAgeWeeks` oder (`maxAgeWeeks` gesetzt und `dogAgeWeeks > maxAgeWeeks`) |
-| 2 | Kandidatenbindung | `trainsSkill != null` und keine `SkillFocus` in `candidates.skills` mit dieser `skillId` — der Skill ist diese Periode nicht im Rennen |
+| 2 | Kandidatenbindung | `trainsSkill !== null` und keine `SkillFocus` in `candidates.skills` mit dieser `skillId` — der Skill ist diese Periode nicht im Rennen |
 | 3 | Ausrüstung | `equipment` enthält einen Eintrag, der nicht in `householdEquipment` steckt |
-| 4 | Zweite Person | `secondPerson == true` und `householdSize < 2` |
+| 4 | Zweite Person | `secondPerson === true` und `householdSize < 2` |
 | 5 | Einschränkung — Belastung | `restrictions` enthält einen Schlüssel aus `config.restrictionArousalCeiling` und `arousal >= restrictionArousalCeiling[Schlüssel]` |
-| 6 | Einschränkung — Gelenke | `restrictions` enthält `jointIssues` und `jointStraining == true` |
+| 6 | Einschränkung — Gelenke | `restrictions` enthält `jointIssues` und `jointStraining === true` |
 | 7 | Sperrfrist der Varianzgruppe | `trainsSkill` ist **kein** Kernskill (`coreSkillIds`), `lastUsedByVarianceGroup[varianceGroup]` ist gesetzt, und `today.difference(lastUsedAt).inDays < cooldownDays` |
-| 8 | Ort | `allowedLocations` ist nicht leer, `location != any`, und `location` steht nicht in `allowedLocations` |
-| 9 | Saisonfenster | `seasonalWindow` ist gesetzt und `today.month` steht nicht darin |
+| 8 | Ort | `allowedLocations` ist nicht leer, `location !== 'any'`, und `location` steht nicht in `allowedLocations` |
+| 9 | Saisonfenster | `seasonalWindow` ist gesetzt und der Monat von `today` (1–12) steht nicht darin |
 | 10 | Eingewöhnung — Belastung | `weeksSinceArrival < config.settlingInWeeks` und `arousal > config.settlingInMaxArousal` |
-| 11 | Eingewöhnung — Ablenkung | zusätzlich zu 10, bei `type == training`: obere Grenze von `forDistraction` `> config.settlingInMaxDistraction` |
-| 12 | Trainingsstufe | `type == training`, `trainsSkill` ist im Rennen, und die aktuelle Ablenkungsstufe des `SkillFocus` liegt außerhalb von `forDistraction` (oder `forDistraction` fehlt) |
-| 13 | Nur Auffrischung | der zugehörige `SkillFocus.status` ist `consolidated` oder `maintenance`, und `isRefresher == false` |
+| 11 | Eingewöhnung — Ablenkung | zusätzlich zu 10, bei `type === 'training'`: obere Grenze von `forDistraction` `> config.settlingInMaxDistraction` |
+| 12 | Trainingsstufe | `type === 'training'`, `trainsSkill` ist im Rennen, und die aktuelle Ablenkungsstufe des `SkillFocus` liegt außerhalb von `forDistraction` (oder `forDistraction` fehlt) |
+| 13 | Nur Auffrischung | der zugehörige `SkillFocus.status` ist `consolidated` oder `maintenance`, und `isRefresher === false` |
 
 Regeln 2, 7, 12 und 13 brauchen den `SkillFocus`, der zu `trainsSkill`
-gehört; sie greifen nicht bei `trainsSkill == null` (Beschäftigung).
+gehört; sie greifen nicht bei `trainsSkill === null` (Beschäftigung).
 
 ## Beispiele
 
-Basisaktivität (sofern nicht anders angegeben): `Activity(minAgeWeeks: 8,
+Basisaktivität (sofern nicht anders angegeben): `{minAgeWeeks: 8,
 maxAgeWeeks: null, equipment: [], secondPerson: false, arousal: 1,
-jointStraining: false, location: any, seasonalWindow: null,
+jointStraining: false, location: 'any', seasonalWindow: null,
 varianceGroup: 'default', cooldownDays: 10, trainsSkill: null, type:
-enrichment, isRefresher: false)`. `ActivityFilterConfig` nutzt
+'enrichment', isRefresher: false}`. `ActivityFilterConfig` nutzt
 `settlingInWeeks: 6, settlingInMaxArousal: 2, settlingInMaxDistraction: 1,
 restrictionArousalCeiling: {protectiveCare: 2, recovery: 2}` — Werte aus
 `content/planer.yaml` (`eingewoehnung_*`) bzw. direkt aus
@@ -104,18 +104,18 @@ restrictionArousalCeiling: {protectiveCare: 2, recovery: 2}` — Werte aus
 
 7. **Eingewöhnung deckelt Belastung und Ablenkung.**
    `weeksSinceArrival: 2` (< 6). Aktivität A: `arousal: 3`. Ausgabe: A
-   nicht enthalten. Aktivität B: `type: training`, `trainsSkill:
+   nicht enthalten. Aktivität B: `type: 'training'`, `trainsSkill:
    'rueckruf'` im Rennen mit `SkillFocus.levels.distraction: 1`,
-   `forDistraction: (0, 3)` (die obere Grenze 3 > `settlingInMaxDistraction
+   `forDistraction: [0, 3]` (die obere Grenze 3 > `settlingInMaxDistraction
    1`). Ausgabe: B nicht enthalten, obwohl die aktuelle Stufe selbst
    innerhalb von `forDistraction` läge — die Eingewöhnungsgrenze ist
    strenger als die reguläre Trainingsstufen-Regel.
 
 8. **Trainingsstufe muss die aktuelle Ablenkung enthalten.**
-   `type: training`, `trainsSkill: 'rueckruf'`, `SkillFocus.levels.
-   distraction: 2`. Aktivität A: `forDistraction: (0, 1)`. Ausgabe: A
-   nicht enthalten (2 liegt außerhalb). Aktivität B: `forDistraction: (2,
-   4)`. Ausgabe: B enthalten.
+   `type: 'training'`, `trainsSkill: 'rueckruf'`, `SkillFocus.levels.
+   distraction: 2`. Aktivität A: `forDistraction: [0, 1]`. Ausgabe: A
+   nicht enthalten (2 liegt außerhalb). Aktivität B: `forDistraction: [2,
+   4]`. Ausgabe: B enthalten.
 
 9. **Gefestigter Skill lässt nur Auffrischung zu.**
    `SkillFocus.status: consolidated`. Aktivität A: `isRefresher: false`.

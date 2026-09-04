@@ -14,26 +14,39 @@ Nicht: ein Kurskatalog zum Abarbeiten. Nicht: ein durchgetakteter Tagesplan.
 
 ## Architektur — nicht verhandelbar
 
-1. `packages/engine/` hat KEINE Abhängigkeit außer `dart:core` und `meta`.
-   Kein Flutter, kein Supabase, kein IO, kein `DateTime.now()`.
-   Zeit kommt immer als Parameter oder aus der injizierten `Clock`.
+**Die gesamte Business-Logik (Planer, Zustandsautomat, Scoring, Zuweisung)
+läuft serverseitig als Supabase Edge Function, nicht client-seitig in
+Dart.** Grund: Logik- und Gewichtsänderungen sollen sofort bei allen
+Nutzern wirken, ohne an App-Release-Zyklen zu hängen. Damit einher geht
+eine bewusste Abkehr vom lokal-first-Anspruch für die Plan**erzeugung**
+(siehe Regel 9). Ein früherer Anlauf mit der Logik in einem Dart-Paket
+(`packages/engine/`) wurde deshalb wieder abgebaut — sollten davon Reste
+auftauchen, sind sie tot und gehören entfernt, nicht weitergepflegt.
 
-2. Kein `DateTime.now()` im gesamten Repo. Verstoß = CI-Fehler.
-   Das Produkt ist zeitbasiert; ohne Fake-Clock ist die Wochenschleife
-   nicht testbar (Simulator, Integrationstest, Debug-Zeitreise).
+1. Business-Logik lebt ausschließlich in `infra/supabase/functions/`
+   (TypeScript auf Deno). Keine Abhängigkeit auf Flutter oder eine
+   bestimmte App-Version — eine Edge Function bedient jeden Client, der
+   sie aufruft, unabhängig vom Build-Stand seiner App.
 
-3. Zustandsverwaltung ausschließlich Riverpod. Kein `setState` in
-   Feature-Code, kein zweites State-Management "nur hier kurz".
+2. Kein `new Date()` / `Date.now()` außerhalb einer injizierten Zeitquelle
+   in `infra/supabase/functions/`. Verstoß = CI-Fehler. Ohne Fake-Clock ist die
+   Wochenschleife nicht testbar (Simulator, Property-Tests, Zeitreise in
+   der Testsuite).
+
+3. Zustandsverwaltung in der App ausschließlich Riverpod. Kein `setState`
+   in Feature-Code, kein zweites State-Management „nur hier kurz". Die
+   App enthält keine Planer-Logik, nur Anzeige, Eingabe und lokales
+   Caching der Server-Antworten.
 
 4. Ordner feature-first: `apps/gustav/lib/features/<feature>/{data,domain,ui}`.
    Kein globales `widgets/` oder `utils/`.
 
 5. Content ist Daten, nie Code. Übungen und Skills leben als YAML in
-   `content/`, werden validiert und geseedet — niemals als Dart-Literale
-   in `lib/`.
+   `content/`, werden validiert und geseedet — niemals als Literale im
+   Code der Edge Functions.
 
-6. Änderungen an `packages/engine/` nur, wenn danach `dart test` UND
-   `dart run tool/simulate.dart --check` grün sind. Die Gewichte in
+6. Änderungen an `infra/supabase/functions/` nur, wenn danach `deno test` UND
+   der Simulator (`--check`) grün sind. Die Gewichte in
    `content/planer.yaml` ändert kein Agent eigenmächtig.
 
 7. Jede neue Funktion beginnt mit einer Spec in `docs/specs/` und einem
@@ -44,36 +57,46 @@ Nicht: ein Kurskatalog zum Abarbeiten. Nicht: ein durchgetakteter Tagesplan.
    Stack (`supabase start`) laufen. Darunter liegt Postgres — die Tür zum
    Selbsthosten bleibt damit jederzeit offen, ohne Umbau.
 
-9. App ist local-first. Sie funktioniert vollständig offline;
-   Sync ist eine Ergänzung, keine Voraussetzung.
+9. **App ist nicht mehr lokal-first für die Planerzeugung.** Ein neuer
+   Wochenplan entsteht ausschließlich serverseitig und braucht eine
+   Verbindung. Bereits erzeugte Pläne werden lokal gecacht und bleiben
+   offline **einsehbar** (und abhakbar, siehe Sync unten) — nur das
+   **Erzeugen** eines neuen Plans erfordert Netz. Das ist eine bewusste
+   Produktentscheidung, keine Nebenwirkung; `docs/produkt.md` hält den
+   Kompromiss fest.
 
-10. **Wo die Logik läuft, ist eine Deployment-Entscheidung, keine
-    Architekturentscheidung.** Der Planer ist eine reine Funktion und läuft
-    deshalb überall — heute in der App (offline, ohne Wartezeit), morgen
-    zusätzlich serverseitig, ohne dass sich am Paket etwas ändert.
-    Damit das so bleibt, gilt:
+10. **Serverseitig gehören immer:** die Planer-Logik selbst (siehe oben),
+    LLM-Aufrufe (keine Schlüssel in der App), der Content-Katalog samt
+    Planerkonfiguration, und die Abo-Prüfung. Entitlements sind nie
+    clientseitig autoritativ — das ist die eine Stelle, an der
+    Manipulation direkt Geld kostet.
 
     - **Parameter sind Daten, nicht Code.** Gewichte, Obergrenzen,
-      Intervalle und Schwellen stehen in `content/planer.yaml` und kommen
-      versioniert mit dem Katalog vom Server. Der Planer wird dadurch
-      nachjustiert, ohne dass ein App-Release nötig ist. Fest verdrahtete
-      Zahlen im Dart-Code sind ein Fehler.
+      Intervalle und Schwellen stehen in `content/planer.yaml`, nicht
+      fest verdrahtet im Code der Edge Function — Content und
+      Planerkonfiguration bleiben zusammen versionierbar und für den
+      Simulator vergleichbar (`--gegen`), unabhängig davon, dass ein
+      Deploy der Function ohnehin sofort bei allen Nutzern wirkt.
     - **Ein Plan wird einmal erzeugt und gespeichert**, nie bei jedem
       Öffnen neu gerechnet. Gespeichert werden `algorithmus_version` und
       `konfig_version` daneben — sonst schreibt eine Konfigänderung mitten
       in der Periode dem Nutzer still seine Woche um.
-    - **Serverseitig gehören immer:** LLM-Aufrufe (keine Schlüssel in der
-      App), der Content-Katalog samt Planerkonfiguration, und die
-      Abo-Prüfung. Entitlements sind nie clientseitig autoritativ —
-      das ist die eine Stelle, an der Manipulation direkt Geld kostet.
+    - Was lokal gecacht wird, dient ausschließlich der **Anzeige und dem
+      Abhaken** offline — nie der Neuberechnung. Ein Tageshäkchen wird
+      lokal zwischengespeichert und synchronisiert, sobald wieder Netz da
+      ist; es löst clientseitig keine Planer-Logik aus.
 
 ## Sprache
 
 **Entwicklungssprache ist Englisch.** Code, Bezeichner, Kommentare,
-Commit-Nachrichten und Testbeschreibungen in `packages/`, `apps/` und `tool/`
-sind durchgängig Englisch — auch dort, wo es die Fachdomäne betrifft (also
-`Skill`, `Activity`, `WeeklyPlan`, `Load`, nicht `Aktivitaet`/`Wochenplan`/
-`Belastung`). Kein Denglisch, keine gemischten Bezeichner.
+Commit-Nachrichten und Testbeschreibungen in `infra/supabase/functions/`,
+`apps/` und `tool/` sind durchgängig Englisch — auch dort, wo es die
+Fachdomäne betrifft (also `Skill`, `Activity`, `WeeklyPlan`, `Load`, nicht
+`Aktivitaet`/`Wochenplan`/`Belastung`). Kein Denglisch, keine gemischten
+Bezeichner. Die Business-Logik ist TypeScript auf Deno
+(`infra/supabase/functions/`), die App ist Dart/Flutter (`apps/`) — beide
+Laufzeiten sprechen nur über die in `docs/datenmodell.md` beschriebenen
+Datenstrukturen miteinander, nie über geteilten Code.
 
 **Nur der Content selbst bleibt Deutsch:** die YAML-Dateien in `content/`
 (Skills, Aktivitäten, `planer.yaml`) und alle nutzersichtbaren Texte in der

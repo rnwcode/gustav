@@ -1,8 +1,8 @@
 # Skill-Zustandsautomat und Spaced Repetition
 
 *Hinweis: Diese Spec ist Produktdokumentation und bleibt Deutsch
-(CLAUDE.md, Abschnitt Sprache). Die Codebeispiele nennen die tatsächlichen,
-englischen Bezeichner aus `packages/engine`.*
+(CLAUDE.md, Abschnitt Sprache). Die Codebeispiele nennen die tatsächlichen
+Bezeichner aus `infra/supabase/functions/_shared/planner/` (TypeScript).*
 
 ## Warum
 
@@ -18,20 +18,20 @@ wissen, was als Nächstes dran ist.
 Zwei Funktionen, beide reine Funktionen ohne Zeitzugriff — `date` kommt als
 Parameter herein.
 
-```dart
-SkillState apply({
-  required SkillState state,
-  required Levels targetLevels,
-  required Outcome outcome,       // nur succeeded | partial | notYet
-  required DateTime date,
-  required StateMachineConfig config,
-})
+```typescript
+function apply(args: {
+  state: SkillState;
+  targetLevels: Levels;
+  outcome: Outcome;       // nur succeeded | partial | notYet
+  date: Date;
+  config: StateMachineConfig;
+}): SkillState
 
-SkillState reportProblem({
-  required SkillState state,
-  required Levels targetLevels,
-  required StateMachineConfig config,
-})
+function reportProblem(args: {
+  state: SkillState;
+  targetLevels: Levels;
+  config: StateMachineConfig;
+}): SkillState
 ```
 
 ### Aktive Dimension
@@ -78,8 +78,8 @@ Trigger ist ein Nutzerhinweis im Wochen-Check-in, keine tägliche Bewertung.
 Gilt für `SkillState` in `maintenance` (erhaltung): Status fällt auf
 `generalizing` zurück, die aktive Dimension sinkt um 1 (Untergrenze 0).
 Intervall fällt auf `start[generalizing]`. Für jeden anderen Status ist der
-Aufruf ein Programmierfehler (`assert`) — das Problem-Melden ergibt nur
-Sinn, wenn der Skill als eingespielt galt.
+Aufruf ein Programmierfehler (wirft) — das Problem-Melden ergibt nur Sinn,
+wenn der Skill als eingespielt galt.
 
 ## Beispiele
 
@@ -160,7 +160,8 @@ ablenkung: 4`) und die Werte aus `content/planer.yaml`
   (`docs/datenmodell.md`) ist zeit- oder periodengetrieben, nicht
   Ergebnis-getrieben, und ist nicht Teil dieser Funktion.
 - Laden von `content/planer.yaml` — `StateMachineConfig` wird
-  hineingereicht (CLAUDE.md, Regel 10), das Parsen gehört ins `tool`-Paket.
+  hineingereicht (CLAUDE.md, Regel 10), das Parsen (YAML → Config) ist
+  nicht Teil dieser Datei.
 
 ## Offene Fragen
 

@@ -1,14 +1,21 @@
 # Werkzeuge
 
-Alle laufen ohne Flutter, ohne Emulator, ohne Netz.
+Läuft ohne Flutter, ohne Emulator, ohne Netz.
 
 | Kommando | Prüft |
 |---|---|
 | `dart run tool/validate.dart` | Content: Schema, Referenzen, Abdeckungslücken, `planer.yaml` |
-| `dart run tool/simulate.dart` | 12 Wochen als Text — liest sich das wie ein guter Plan? |
-| `dart run tool/simulate.dart --check` | Invarianten über 20 synthetische Hunde |
-| `dart run tool/simulate.dart --gegen <datei>` | zwei Konfigurationsstände nebeneinander |
 | `dart run tool/seed.dart` | YAML → Postgres, idempotent |
+
+Der Simulator (`simulate.ts`) lebt seit dem Architekturwechsel auf
+Supabase Edge Functions nicht mehr hier, sondern direkt neben der
+Planer-Logik, die er durchspielt:
+
+| Kommando | Prüft |
+|---|---|
+| `deno run infra/supabase/functions/_shared/planner/simulate.ts` | 12 Wochen als Text — liest sich das wie ein guter Plan? |
+| `deno run infra/supabase/functions/_shared/planner/simulate.ts --check` | Invarianten über 20 synthetische Hunde |
+| `deno run infra/supabase/functions/_shared/planner/simulate.ts --gegen <datei>` | zwei Konfigurationsstände nebeneinander |
 
 Der Simulator ist das wichtigste Entwurfswerkzeug des Projekts. Er findet
 Fehler, die kein Unit-Test findet: dreimal dasselbe Suchspiel in Woche 6,
@@ -19,10 +26,12 @@ nachlässigen Nutzer wie eine Strafpredigt liest.
 
 Der Simulator lädt `content/planer.yaml` und reicht sie in den Planer hinein —
 er importiert sie nicht. Das ist die praktische Durchsetzung von Regel 10:
-Steht ein Gewicht im Dart-Code, lässt sich der Vergleichsmodus nicht bauen.
+Steht ein Gewicht fest verdrahtet im Code der Edge Function, lässt sich der
+Vergleichsmodus nicht bauen.
 
 ```bash
-dart run tool/simulate.dart --hund junghund43 --profil unregelmaessig \
+deno run infra/supabase/functions/_shared/planner/simulate.ts \
+    --hund junghund43 --profil unregelmaessig \
     --konfig content/planer.yaml \
     --gegen  content/varianten/mehr-ruhe.yaml
 ```

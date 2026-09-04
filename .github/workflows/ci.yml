@@ -14,37 +14,40 @@ jobs:
 
       # Regel 2 aus CLAUDE.md: Das Produkt ist zeitbasiert. Ohne Fake-Clock
       # sind Simulator, Integrationstest und Debug-Zeitreise nicht baubar.
-      - name: Kein DateTime.now()
+      - name: Kein Date.now() / new Date() außerhalb der Clock
         run: |
-          if grep -rn --include='*.dart' 'DateTime\.now()' . \
-               | grep -v 'packages/engine/lib/src/clock.dart'; then
-            echo "::error::DateTime.now() gefunden — Zeit kommt aus Clock (CLAUDE.md, Regel 2)"
+          if grep -rnE '(Date\.now\(\)|new Date\(\))' \
+               --include='*.ts' infra/supabase/functions \
+               | grep -v 'infra/supabase/functions/_shared/planner/clock.ts'; then
+            echo "::error::Date.now()/new Date() gefunden — Zeit kommt aus Clock (CLAUDE.md, Regel 2)"
             exit 1
           fi
           echo "OK"
 
-      # Regel 1: Die Engine bleibt frei von Flutter, IO und Supabase.
-      - name: Engine bleibt rein
+      # Regel 1: Die Planer-Logik bleibt frei von IO und Netzwerk.
+      - name: Planer bleibt rein
         run: |
-          if grep -rnE "import 'package:(flutter|supabase)" packages/engine/lib \
-             || grep -rn "import 'dart:io'" packages/engine/lib; then
-            echo "::error::Engine hat eine verbotene Abhängigkeit (CLAUDE.md, Regel 1)"
+          if grep -rnE "Deno\.(readTextFile|readFile|env|writeFile)|fetch\(" \
+               infra/supabase/functions/_shared/planner; then
+            echo "::error::Planer-Logik hat eine verbotene Abhängigkeit (CLAUDE.md, Regel 1)"
             exit 1
           fi
           echo "OK"
 
-  engine:
-    name: Engine
+  planner:
+    name: Planer
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dart-lang/setup-dart@v1
-      - run: dart pub get
-        working-directory: packages/engine
-      - run: dart analyze --fatal-infos
-        working-directory: packages/engine
-      - run: dart test
-        working-directory: packages/engine
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno fmt --check .
+        working-directory: infra/supabase/functions
+      - run: deno lint .
+        working-directory: infra/supabase/functions
+      - run: deno test
+        working-directory: infra/supabase/functions
 
   content:
     name: Content

@@ -1,8 +1,8 @@
 # Belastungsbudget
 
 *Hinweis: Diese Spec bleibt Deutsch (CLAUDE.md, Abschnitt Sprache). Die
-Codebeispiele nennen die tatsächlichen, englischen Bezeichner aus
-`packages/engine`.*
+Codebeispiele nennen die tatsächlichen Bezeichner aus
+`infra/supabase/functions/_shared/planner/` (TypeScript).*
 
 ## Warum
 
@@ -21,13 +21,13 @@ Reine Funktion, kein Zeitzugriff — die sieben Tageslasten kommen fertig
 berechnet herein; wie sie aus `Slot` + `Activity` + `Outcome` entstehen, ist
 nicht Teil dieser Funktion (siehe „Nicht dazu gehört").
 
-```dart
-LoadBudget evaluateLoadBudget({
-  required List<int> loadOverLastSevenDays,  // genau 7, ältester Tag zuerst
-  required LifeStage lifeStage,
-  required Set<Restriction> restrictions,
-  required LoadBudgetConfig config,
-})
+```typescript
+function evaluateLoadBudget(args: {
+  loadOverLastSevenDays: number[];  // genau 7, ältester Tag zuerst
+  lifeStage: LifeStage;
+  restrictions: Set<Restriction>;
+  config: LoadBudgetConfig;
+}): LoadBudget
 ```
 
 1. **Tageskapazität**: `config.capacityPerDay[lifeStage]`, danach für jede

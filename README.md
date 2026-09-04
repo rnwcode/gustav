@@ -3,18 +3,19 @@
 Wochenplaner für Hundehalter. Gustav ist der Hund auf dem Icon — das Gesicht
 des Produkts, nicht seine Stimme.
 
-Monorepo: reine Dart-Engine, Flutter-App, Content als YAML, gehostetes Supabase.
+Monorepo: Business-Logik als Supabase Edge Function (TypeScript/Deno),
+Flutter-App als Client, Content als YAML, gehostetes Supabase.
 
 ## Aufbau
 
 ```
-packages/engine/   reines Dart — Modelle, Planer, Spaced Repetition. Keine Abhängigkeiten.
-apps/gustav/       Flutter-App (iOS, Android). Local-first. com.isjust.gustav
-content/           Skills, Aktivitäten und Planerkonfiguration als YAML
-tool/              validate.dart, simulate.dart, seed.dart
-infra/supabase/    Migrationen, Seeds, Anbindung
-assets/            Illustrationen (SVG, Einstrich-Tusche)
-docs/              Produkt, Datenmodell, Bauplan, Specs
+infra/supabase/functions/_shared/planner/  Planer-Logik (TypeScript, Deno) — Modelle, Zustandsautomat, Scoring
+infra/supabase/                            Migrationen, Seeds, Edge Functions
+apps/gustav/                               Flutter-App (iOS, Android). Client gegen die Edge Function. com.isjust.gustav
+content/                                   Skills, Aktivitäten und Planerkonfiguration als YAML
+tool/                                      validate.dart, seed.dart (Content-Tooling, bleibt Dart)
+assets/                                    Illustrationen (SVG, Einstrich-Tusche)
+docs/                                      Produkt, Datenmodell, Bauplan, Specs
 ```
 
 **Vor dem ersten Code `docs/` lesen** — dort steht alles, was das Produkt
@@ -28,8 +29,8 @@ cd apps
 flutter create --org com.isjust --project-name gustav \
   --platforms=ios,android gustav
 
-# 2  Engine-Abhängigkeiten
-cd ../packages/engine && dart pub get
+# 2  Deno (für die Planer-Logik)
+curl -fsSL https://deno.land/install.sh | sh
 
 # 3  Supabase lokal (Docker)
 npm i -g supabase && supabase start
@@ -38,15 +39,16 @@ npm i -g supabase && supabase start
 ## Täglicher Ablauf
 
 ```bash
-dart test packages/engine            # Engine, < 2 s, kein Flutter nötig
-dart run tool/validate.dart          # Content: Schema, Referenzen, Lücken
-dart run tool/simulate.dart          # 12 Wochen als Text lesen
-dart run tool/simulate.dart --check  # Invarianten über 20 synthetische Hunde
-cd apps/gustav && flutter test       # Widgets und Goldens
+deno test infra/supabase/functions          # Planer-Logik, < 2 s, kein Netz nötig
+dart run tool/validate.dart                 # Content: Schema, Referenzen, Lücken
+deno run infra/supabase/functions/_shared/planner/simulate.ts          # 12 Wochen als Text lesen
+deno run infra/supabase/functions/_shared/planner/simulate.ts --check  # Invarianten über 20 synthetische Hunde
+cd apps/gustav && flutter test              # Widgets und Goldens
 ```
 
 ## Reihenfolge
 
-Phase 1 ist die Engine samt Simulator — ohne Oberfläche. Erst wenn zwölf
+Phase 1 ist die Planer-Logik samt Simulator — ohne Oberfläche, aber bereits
+als Edge Function gegen den lokalen Supabase-Stack. Erst wenn zwölf
 simulierte Wochen sich richtig lesen, beginnt die App. Details in
 `docs/bauplan.md`.

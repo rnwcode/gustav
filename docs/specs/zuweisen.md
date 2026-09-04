@@ -1,8 +1,8 @@
 # Zuweisen (Planer, Schritt 6)
 
 *Hinweis: Diese Spec bleibt Deutsch (CLAUDE.md, Abschnitt Sprache). Die
-Codebeispiele nennen die tatsächlichen, englischen Bezeichner aus
-`packages/engine`.*
+Codebeispiele nennen die tatsächlichen Bezeichner aus
+`infra/supabase/functions/_shared/planner/` (TypeScript).*
 
 ## Warum
 
@@ -18,16 +18,16 @@ Reine Funktion, kein Zeitzugriff. Welcher Tag „Trainingstag" ist und wie
 groß sein Zeitbudget ist, löst der Aufrufer aus `Household` auf (analog zu
 den vorherigen Schritten) — diese Funktion bekommt beides fertig herein.
 
-```dart
-List<DayAssignment> assignToDays({
-  required List<PeriodDay> days,          // chronologisch, ein Eintrag pro Periodentag
-  required List<ScoredActivity> pool,     // aus scoreActivities, absteigend sortiert
-  required AssignmentConfig config,
-})
+```typescript
+function assignToDays(args: {
+  days: PeriodDay[];          // chronologisch, ein Eintrag pro Periodentag
+  pool: ScoredActivity[];     // aus scoreActivities, absteigend sortiert
+  config: AssignmentConfig;
+}): DayAssignment[]
 ```
 
 `PeriodDay` = `{date, isTrainingDay, timeBudgetMinutes}`. `DayAssignment` =
-`{date, activityId}` — `activityId == null` heißt bewusst leer.
+`{date, activityId}` — `activityId === null` heißt bewusst leer.
 `AssignmentConfig`:
 
 - `maxActiveSlots` — `phasen[lebensphase].aktive_slots`
@@ -58,7 +58,7 @@ Für jeden Tag, solange `assignableCap` noch nicht erreicht ist, wird die
 die **alle** zutreffenden Regeln erfüllt:
 
 1. noch nicht in dieser Periode verwendet
-2. `type == training` ⇒ `isTrainingDay == true` **und** noch nicht
+2. `type === 'training'` ⇒ `isTrainingDay === true` **und** noch nicht
    `maxTrainingSlots` Trainingsslots vergeben
 3. `durationMin ≤ timeBudgetMinutes` des Tages
 4. **Kürzester Tag**: Aktivitäten mit `arousal ≥ heavyArousalThreshold`
@@ -80,8 +80,8 @@ Einheit wieder uneingeschränkt möglich.
 
 ## Beispiele
 
-`AssignmentConfig(maxActiveSlots: 5, maxTrainingSlots: 3, minEmptySlots:
-1, heavyArousalThreshold: 2, maxArousalThreshold: 3)`, sofern nicht anders
+`{maxActiveSlots: 5, maxTrainingSlots: 3, minEmptySlots: 1,
+heavyArousalThreshold: 2, maxArousalThreshold: 3}`, sofern nicht anders
 angegeben. Aktivitäten sind der Kürze halber als `(id, type, arousal,
 durationMin)` angegeben, `pool` bereits nach Score absteigend sortiert.
 
@@ -173,6 +173,7 @@ die eigentlich geprüfte Regel gar nicht mehr zeigen können.
 - Diese Implementierung füllt Tage chronologisch von vorne, bis
   `assignableCap` erreicht ist; leere Tage sammeln sich dadurch eher am
   Ende der Periode statt über die Woche verteilt zu sein. Ob das „wie ein
-  guter Plan" liest, prüft der Simulator (`dart run tool/simulate.dart`),
+  guter Plan" liest, prüft der Simulator
+  (`deno run infra/supabase/functions/_shared/planner/simulate.ts`),
   sobald er steht — nicht diese Spec. Eine Verteilungsheuristik ohne
   Beleg aus dem Simulator wäre eine erfundene Verfeinerung.

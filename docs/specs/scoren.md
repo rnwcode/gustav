@@ -1,8 +1,8 @@
 # Scoren (Planer, Schritt 5)
 
 *Hinweis: Diese Spec bleibt Deutsch (CLAUDE.md, Abschnitt Sprache). Die
-Codebeispiele nennen die tatsächlichen, englischen Bezeichner aus
-`packages/engine`.*
+Codebeispiele nennen die tatsächlichen Bezeichner aus
+`infra/supabase/functions/_shared/planner/` (TypeScript).*
 
 ## Warum
 
@@ -20,16 +20,16 @@ Reine Funktion, kein Zeitzugriff — `today` kommt als Parameter herein.
 gemacht" pro Aktivität sind bereits fertige Eingaben, analog zu den
 vorherigen Schritten.
 
-```dart
-List<ScoredActivity> scoreActivities({
-  required List<Activity> pool,             // aus filterActivities
-  required CandidatePool candidates,
-  required BreedGroup breedGroup,
-  required RecoveryNeed recoveryNeed,
-  required Map<String, DateTime> lastUsedByActivityId,
-  required DateTime today,
-  required ScoringConfig config,
-})
+```typescript
+function scoreActivities(args: {
+  pool: Activity[];             // aus filterActivities
+  candidates: CandidatePool;
+  breedGroup: BreedGroup;
+  recoveryNeed: RecoveryNeed;
+  lastUsedByActivityId: Map<string, Date>;
+  today: Date;
+  config: ScoringConfig;
+}): ScoredActivity[]
 ```
 
 Für jede Aktivität in `pool`:
@@ -40,7 +40,7 @@ score =  config.priorityWeight        · priority
        + config.needGapWeight         · needGapScore
        + config.newSkillWeight        · (isNewSkill ? 1 : 0)
        + config.suitabilityWeight     · suitability
-       + (recoveryNeed == none ? 0 : config.arousalAtRecoveryNeedWeight · arousal)
+       + (recoveryNeed === 'none' ? 0 : config.arousalAtRecoveryNeedWeight · arousal)
        + (recentlyDone ? config.recentlyDoneWeight : 0)
 ```
 
@@ -60,11 +60,11 @@ Unabhängig von einem Skill:
   Auslegung von „bedarfsluecke": wie viel diese Aktivität von dem liefert,
   was gerade fehlt, nicht wie stark die Lücke selbst ist (siehe „Offene
   Fragen").
-- `suitability` = `activity.suitability[breedGroup] ?? 0` — fehlt der
+- `suitability` = `activity.suitability.get(breedGroup) ?? 0` — fehlt der
   Eintrag, gilt neutral 0 (`docs/datenmodell.md`: „gewichtet, filtert NIE
   hart").
-- `recentlyDone` = `lastUsedByActivityId[activity.id]` ist gesetzt und
-  `today.difference(lastUsedAt).inDays < config.recentlyDoneDays`.
+- `recentlyDone` = `lastUsedByActivityId.get(activity.id)` ist gesetzt und
+  die Tage bis `today` sind `< config.recentlyDoneDays`.
 
 **Zu den Vorzeichen:** `content/planer.yaml` speichert
 `belastung_bei_erholungsbedarf` und `kuerzlich_gemacht` bereits negativ
@@ -100,8 +100,8 @@ recentlyDoneWeight: -2.0, recentlyDoneDays: 10`.
    6.0` — nicht `8.0`, der Deckel greift.
 
 3. **Bedarfslücke zählt nur, was gerade fehlt.**
-   Eingabe: `candidates.needs = [NeedFocus(scent, gap: 3),
-   NeedFocus(social, gap: 2)]`. Aktivität A: `needs = {scent: 2, social:
+   Eingabe: `candidates.needs = [{dimension: 'scent', gap: 3},
+   {dimension: 'social', gap: 2}]`. Aktivität A: `needs = {scent: 2, social:
    1, physical: 0, mentalWork: 0, recovery: 0}` → `needGapScore = 2 + 1 =
    3` → `score = 2.0 × 3 = 6.0`. Aktivität B: `needs = {physical: 3, …
    sonst 0}` (physical hat keine Lücke) → `needGapScore = 0` → `score =
