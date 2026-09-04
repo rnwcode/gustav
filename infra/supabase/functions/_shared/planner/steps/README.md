@@ -81,3 +81,9 @@ those signals apply), turning `DayAssignment[]` into `Slot[]`. Spec: `docs/specs
 
 The weights in step 5 are tuned, not derived. They only change together with a simulator run
 (`simulate.ts`, one level up).
+
+## Orchestrator
+
+`../plan.ts` — `plan()` chains all eight steps above into one `WeeklyPlan`. Spec:
+`docs/specs/planer.md` (German — product documentation). Not a step itself, so it lives one level
+up, next to `mod.ts`.
