@@ -3,13 +3,19 @@
 Pure function: state in, weekly plan out. No network, no LLM, no unseeded
 random numbers.
 
-## State machine (done)
+## Building blocks (done)
 
 `state_machine.dart` — `apply()` and `reportProblem()` turn an assessment
 into a new `SkillState` (level logic, status transitions, spaced
 repetition). Spec: `docs/specs/skill-zustandsautomat.md` (German — product
 documentation). Runs ahead of the actual planner and is a prerequisite for
 step 3 (due refreshers).
+
+`load_budget.dart` — `evaluateLoadBudget()` turns seven days of resolved
+daily loads into a quote and a `RecoveryNeed` classification. Spec:
+`docs/specs/belastungsbudget.md` (German — product documentation). Feeds
+step 1 (context) and step 5 (scoring); does not itself resolve daily loads
+from `Slot`/`Activity`/`Outcome` — that stays the planner's job.
 
 ## Planner steps 1–8 (open)
 

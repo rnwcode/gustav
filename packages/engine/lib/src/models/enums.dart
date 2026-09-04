@@ -85,3 +85,18 @@ enum WeeklyContextSource { chip, freeText, fallback }
 enum Dimension { duration, distance, distraction }
 
 enum NeedDimension { physical, mentalWork, scent, social, recovery }
+
+/// Classification of the rolling load budget — see
+/// `docs/specs/belastungsbudget.md`.
+enum RecoveryNeed { none, medium, high }
+
+/// Kind of machine-readable reason attached to a [Slot] — see
+/// `docs/datenmodell.md`, section „Der Planer", step 5.
+enum ReasonKind {
+  priority,
+  dueRefresher,
+  needGap,
+  newSkill,
+  recoveryNeed,
+  empty
+}

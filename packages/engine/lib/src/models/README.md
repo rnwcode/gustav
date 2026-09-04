@@ -13,11 +13,12 @@ German — the identifiers below are the English translation used in code):
 - `skill.dart` — Skill, target levels
 - `skill_state.dart` — state per dog × skill, history
 - `activity.dart` — the unit the planner distributes, plus `Needs`
+- `checkin.dart` — `WeeklyCheckin` (review, intent) and the derived
+  `WeeklyContext` (priorities, constraints, flags, source)
+- `weekly_plan.dart` — `WeeklyPlan`, `Slot`, machine-readable `Reason`
 
-Still open (follows with the planner steps 1–7, see `../planner/README.md`):
-
-- `checkin.dart` — review, intent, derived weekly context
-- `weekly_plan.dart` — slots, reasons, period length
+All data classes for Phase 1 are in place; the planner steps themselves
+(`../planner/README.md`) are still open.
 
 Rule: no system time, no IO, no serialization against Supabase in this
 package. Data and logic only — time comes in as a parameter (`today`,

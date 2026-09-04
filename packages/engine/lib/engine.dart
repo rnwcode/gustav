@@ -7,6 +7,7 @@ library engine;
 
 export 'src/clock.dart';
 export 'src/models/activity.dart';
+export 'src/models/checkin.dart';
 export 'src/models/dog.dart';
 export 'src/models/dog_derivations.dart';
 export 'src/models/enums.dart';
@@ -14,5 +15,8 @@ export 'src/models/household.dart';
 export 'src/models/levels.dart';
 export 'src/models/skill.dart';
 export 'src/models/skill_state.dart';
+export 'src/models/weekly_plan.dart';
+export 'src/planner/load_budget.dart';
+export 'src/planner/load_budget_config.dart';
 export 'src/planner/state_machine.dart';
 export 'src/planner/state_machine_config.dart';
