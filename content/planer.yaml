@@ -1,0 +1,96 @@
+# Planerkonfiguration
+#
+# Alle Stellschrauben des Planers an einem Ort. Diese Datei ist Daten, nicht
+# Code (CLAUDE.md, Regel 10): Sie kommt versioniert mit dem Katalog vom Server,
+# damit der Planer ohne App-Release nachjustiert werden kann. Fest verdrahtete
+# Zahlen im Dart-Code sind ein Fehler.
+#
+# Die Werte sind EINGESTELLT, nicht hergeleitet. Sie werden nur zusammen mit
+# einem Simulatorlauf geändert:  dart run tool/simulate.dart --check
+#
+# version wird bei jeder Änderung hochgezählt und im erzeugten Plan als
+# konfig_version mitgespeichert.
+
+version: 1
+
+# ── Perioden ────────────────────────────────────────────────────────────────
+# Der Zyklus hängt am planungstag des Haushalts, nicht am Kalender.
+perioden:
+  laenge_tage: 7
+  erste_periode_min_tage: 5      # Mittwochsstart → 5 Tage bis Sonntag
+  erste_periode_max_tage: 10     # Samstagsstart → 9 Tage bis übernächsten Sonntag
+  leere_slots_min: 1
+  leere_slots_bei_erholungsbedarf_hoch: 2
+
+# ── Obergrenzen je Lebensphase ──────────────────────────────────────────────
+# Ein Welpe bekommt keine sechs Termine, auch wenn Zeit da wäre.
+phasen:
+  welpe:      { aktive_slots: 4, training: 2 }
+  junghund:   { aktive_slots: 5, training: 3 }
+  pubertaet:  { aktive_slots: 6, training: 4 }
+  erwachsen:  { aktive_slots: 6, training: 4 }
+  senior:     { aktive_slots: 5, training: 3 }
+
+# ── Belastungsbudget ────────────────────────────────────────────────────────
+# Quote = Summe der Belastung der letzten 7 Tage / 7 / belastbarkeit_pro_tag
+belastbarkeit_pro_tag:
+  welpe: 1.0
+  junghund: 1.6
+  pubertaet: 1.8
+  erwachsen: 2.0
+  senior: 1.4
+einschraenkung_deckel:           # überschreibt nach unten
+  rekonvaleszenz: 0.6
+  schonung: 1.0
+erholungsbedarf:
+  mittel_ab_quote: 0.7
+  hoch_ab_quote: 1.0
+
+# ── Spaced Repetition ───────────────────────────────────────────────────────
+# Bewusst grob: Es geht nicht um Vokabeln, sondern darum, dass nichts
+# wochenlang liegen bleibt. Angaben in Tagen.
+spaced_repetition:
+  faktor_bei_erfolg: 1.8
+  aufbau:          { start: 1,  deckel: 4 }
+  generalisierung: { start: 3,  deckel: 14 }
+  gefestigt:       { start: 10, deckel: 45 }
+  erhaltung:       { start: 45, deckel: 90 }
+
+# ── Stufenlogik (die drei D) ────────────────────────────────────────────────
+# Immer nur ein D gleichzeitig erhöhen; wenn eins steigt, gehen die anderen
+# einen Schritt zurück. Das ist das gängige Handwerksprinzip.
+stufen:
+  erhoehen_nach_erfolgen: 3
+  senken_nach_misserfolgen: 2
+  reihenfolge: [dauer, distanz, ablenkung]
+  generalisierung_ab_ablenkung: 2
+
+# ── Scoring (Schritt 5 des Planers) ─────────────────────────────────────────
+gewichte:
+  prioritaet: 3.0                      # aus den Absicht-Chips
+  ueberfaelligkeit: 2.0                # je Woche über dem Fälligkeitsdatum
+  ueberfaelligkeit_deckel: 3.0
+  bedarfsluecke: 2.0
+  neuer_skill: 1.0
+  eignung_rassegruppe: 1.0             # gewichtet, filtert NIE hart
+  belastung_bei_erholungsbedarf: -3.0
+  kuerzlich_gemacht: -2.0
+kuerzlich_gemacht_tage: 10
+
+# ── Bedarfsdeckung (die zweite Währung) ─────────────────────────────────────
+# Angestrebte Summe je Dimension über sieben Tage. Die Lücke dazu geht ins
+# Scoring ein; eine über zwei Perioden ungedeckte Dimension meldet --check.
+bedarf_ziel:
+  koerperlich: 6
+  kopfarbeit: 6
+  nase: 5
+  sozial: 3
+  erholung: 6
+
+# ── Belastungsregeln bei der Zuweisung ──────────────────────────────────────
+belastungsregeln:
+  nie_zwei_tage_in_folge_belastung: 3
+  nach_belastung_ab: 2                 # danach nur ruhe oder beschaeftigung
+  eingewoehnung_wochen: 6              # ab Einzugsdatum
+  eingewoehnung_max_ablenkung: 1
+  eingewoehnung_max_belastung: 2

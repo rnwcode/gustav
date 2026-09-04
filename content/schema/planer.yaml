@@ -1,0 +1,25 @@
+# Schema für content/planer.yaml
+#
+# Eine einzige Datei, keine Sammlung. Sie enthält alle Stellschrauben des
+# Planers und wird zusammen mit dem Katalog ausgeliefert.
+#
+# Der Validator prüft:
+#   - version ist eine ganze Zahl und größer als die zuletzt geseedete
+#   - alle Schlüssel vorhanden, keine unbekannten
+#   - alle Lebensphasen und Skill-Status vollständig abgedeckt
+#   - Intervalle: start <= deckel, faktor > 1
+#   - stufen.reihenfolge enthält genau dauer, distanz, ablenkung
+#   - erholungsbedarf: mittel_ab_quote < hoch_ab_quote
+#   - erste_periode_min_tage <= laenge_tage <= erste_periode_max_tage
+
+version:                int
+perioden:               map
+phasen:                 map<lebensphase, {aktive_slots: int, training: int}>
+belastbarkeit_pro_tag:  map<lebensphase, double>
+einschraenkung_deckel:  map<einschraenkung, double>
+erholungsbedarf:        {mittel_ab_quote: double, hoch_ab_quote: double}
+spaced_repetition:      map<skill_status, {start: int, deckel: int}> + faktor
+stufen:                 map
+gewichte:               map<string, double>
+bedarf_ziel:            map<bedarf_dimension, int>
+belastungsregeln:       map

@@ -8,6 +8,8 @@
 //      mindestens eine passende Aktivität, plus eine Auffrischungsvariante.
 //      Ohne diese Prüfung läuft der Planer bei einem echten Nutzer leer.
 //   5. Varianzgruppen — jede Gruppe hat genug Mitglieder für ihre Sperrfrist
+//   6. planer.yaml — vollständig, konsistent, version hochgezählt
+//      (siehe content/schema/planer.yaml)
 //
 // Rückgabe: Exit-Code 0 bei grün, 1 bei Fehlern. Wird von der CI aufgerufen.
 
