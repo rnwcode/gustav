@@ -11,6 +11,13 @@ values derived from them (`ageWeeks`, `lifeStage`, `heatSensitivity`, `weeksSinc
 `WeeklyCheckin` into `WeeklyContext`, and deliberately carries no season/weather field yet (no data
 source exists — backlog V1.1).
 
+`period.ts` — `buildPeriod()` is step 2: resolves the period's length and days from
+`Household.planningDay`/`trainingDays`/time budgets, and the recovery-need- and life-stage-dependent
+limits step 6 needs (`minEmptySlots`, `maxActiveSlots`, `maxTrainingSlots`). Spec:
+`docs/specs/slots-festlegen.md` (German — product documentation). One open edge case: an irregular
+first period can exceed the documented 10-day maximum by one day (Thursday start against a Sunday
+`planningDay`) — deliberately not clamped, see the spec's „Offene Fragen".
+
 `state_machine.ts` — `apply()` and `reportProblem()` turn an assessment into a new `SkillState`
 (level logic, status transitions, spaced repetition). Spec: `docs/specs/skill-zustandsautomat.md`
 (German — product documentation). Runs ahead of the actual planner and is a prerequisite for step 3
@@ -50,9 +57,7 @@ documentation). Deliberately does not attach a `Reason` (step 8) or cross-check 
 
 1. Build context — dog, household, weekly context, load budget (done, see `context.ts` above;
    season/weather stays open, backlog V1.1)
-2. Fix slots — period length, empty slots, phase cap (open — `assignToDays` already takes
-   `minEmptySlots`/`maxActiveSlots`/`maxTrainingSlots` as config, but computing period length and
-   the recovery-need-dependent empty-slot count is still the caller's job)
+2. Fix slots — period length, empty slots, phase cap (done, see `period.ts` above)
 3. Collect candidates — due refreshers, priorities, need gaps, new skills (done, see `candidates.ts`
    above)
 4. Hard filter — age, prerequisites, equipment, restrictions, cooldown, safety (done except heat
