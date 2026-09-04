@@ -1,5 +1,5 @@
 name: engine
-description: Planer-Engine des Hundeplaners — reines Dart, keine Laufzeitabhängigkeiten.
+description: Planer-Engine von Gustav — reines Dart, keine Laufzeitabhängigkeiten.
 publish_to: none
 version: 0.1.0
 

@@ -1,4 +1,4 @@
-/// Planer-Engine des Hundeplaners.
+/// Planer-Engine von Gustav.
 ///
 /// Reines Dart: keine Abhängigkeit auf Flutter, IO, Netzwerk oder Supabase.
 /// Zeit kommt ausschließlich über [Clock] oder als Parameter herein —
