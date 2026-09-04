@@ -1,0 +1,19 @@
+# Schema für content/skills/*.yaml
+#
+# Ein Skill ist etwas, das der Hund lernen kann. Schwierigkeit ist
+# dreidimensional (Dauer, Distanz, Ablenkung) — das ist das gängige
+# Handwerksprinzip und keine Modellierungsspielerei.
+
+id:                 string      # kleinbuchstaben_mit_unterstrich, eindeutig
+name:               string      # nutzersichtbar, deutsch
+kategorie:          enum        # grundsignal | leinenarbeit | impulskontrolle
+                                # | alltagsroutine | sozialverhalten | kooperation
+voraussetzungen:    [skill_id]  # müssen mindestens Status "generalisierung" haben
+min_alter_wochen:   int
+ist_kernskill:      bool        # Kernskills unterliegen keiner Sperrfrist —
+                                # Grundsignale brauchen Wiederholung
+zielstufen:                     # wo der Aufbau sinnvoll endet, je 0–5
+  dauer:            int
+  distanz:          int
+  ablenkung:        int
+beschreibung:       string      # wofür das gut ist, in einem Satz

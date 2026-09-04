@@ -1,0 +1,36 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+build/
+pubspec.lock
+!packages/engine/pubspec.lock
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+.vscode/
+!.vscode/settings.json
+
+# Plattform-Artefakte
+apps/app/ios/Pods/
+apps/app/ios/.symlinks/
+apps/app/android/.gradle/
+apps/app/android/local.properties
+apps/app/**/GeneratedPluginRegistrant.*
+
+# Secrets — niemals einchecken
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Supabase (self-hosted)
+infra/supabase/volumes/
+infra/supabase/docker-compose.yml
+infra/supabase/.env
+
+# Sonstiges
+.DS_Store
+Thumbs.db
+coverage/

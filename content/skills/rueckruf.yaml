@@ -1,0 +1,14 @@
+id: rueckruf
+name: Rückruf
+kategorie: grundsignal
+voraussetzungen: [namensaufmerksamkeit]
+min_alter_wochen: 9
+ist_kernskill: true
+zielstufen:
+  dauer: 1
+  distanz: 3
+  ablenkung: 4
+beschreibung: >
+  Der Hund kommt auf ein Signal zuverlässig zurück — auch dann, wenn
+  gerade etwas Interessanteres passiert. Der wichtigste Skill überhaupt,
+  und der, der am längsten braucht.

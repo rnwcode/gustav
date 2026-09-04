@@ -1,0 +1,14 @@
+name: engine
+description: Planer-Engine des Hundeplaners — reines Dart, keine Laufzeitabhängigkeiten.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  meta: ^1.15.0
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^4.0.0

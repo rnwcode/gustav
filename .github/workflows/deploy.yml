@@ -1,0 +1,24 @@
+# Deployment — Platzhalter, aktiv ab Phase 3.
+#
+# Gedachter Ablauf:
+#   1. Migrationen gegen Staging anwenden, Smoke-Test
+#   2. Nach manueller Freigabe: Migrationen gegen Produktion
+#   3. tool/seed.dart für den Content
+#
+# Zugang zum Server über SSH-Key aus den Repository-Secrets.
+# Die Produktion wird nie ohne vorherigen Staging-Durchlauf angefasst.
+#
+# Merke: Vor dem ersten echten Deployment steht der Restore-Test —
+# ein Backup auf eine frische Maschine zurückspielen und die App
+# dagegen laufen lassen. Das ist die Abnahme von Phase 3.
+
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  platzhalter:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Ab Phase 3 — siehe docs/bauplan.md"

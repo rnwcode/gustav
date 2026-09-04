@@ -1,0 +1,33 @@
+-- 0001_init.sql
+--
+-- Erste Migration. Angelegt werden hier die Zustandstabellen aus
+-- docs/datenmodell.md — NICHT der Content: Skills und Aktivitäten kommen
+-- per tool/seed.dart aus content/ und sind für alle Nutzer gleich.
+--
+-- Zustand (nutzergebunden, RLS-geschützt):
+--   hund, haushalt, skill_stand, periode, slot, checkin
+--
+-- Content (global lesbar, nur Service-Role schreibt):
+--   skill, aktivitaet
+--
+-- Jede Zustandstabelle bekommt:
+--   - RLS aktiviert, Policy gegen auth.uid()
+--   - einen eigenen Test in migrations/tests/
+--
+-- TODO(Phase 3): implementieren.
+
+-- Beispielhaftes Muster, an dem sich alle Zustandstabellen orientieren:
+--
+-- create table hund (
+--   id uuid primary key default gen_random_uuid(),
+--   besitzer uuid not null references auth.users(id) on delete cascade,
+--   name text not null,
+--   geburtsdatum date not null,
+--   einzugsdatum date not null,
+--   erstellt_am timestamptz not null default now()
+-- );
+--
+-- alter table hund enable row level security;
+--
+-- create policy "eigene hunde" on hund
+--   for all using (besitzer = auth.uid()) with check (besitzer = auth.uid());

@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  invarianten:
+    name: Invarianten
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Regel 2 aus CLAUDE.md: Das Produkt ist zeitbasiert. Ohne Fake-Clock
+      # sind Simulator, Integrationstest und Debug-Zeitreise nicht baubar.
+      - name: Kein DateTime.now()
+        run: |
+          if grep -rn --include='*.dart' 'DateTime\.now()' . \
+               | grep -v 'packages/engine/lib/src/clock.dart'; then
+            echo "::error::DateTime.now() gefunden — Zeit kommt aus Clock (CLAUDE.md, Regel 2)"
+            exit 1
+          fi
+          echo "OK"
+
+      # Regel 1: Die Engine bleibt frei von Flutter, IO und Supabase.
+      - name: Engine bleibt rein
+        run: |
+          if grep -rnE "import 'package:(flutter|supabase)" packages/engine/lib \
+             || grep -rn "import 'dart:io'" packages/engine/lib; then
+            echo "::error::Engine hat eine verbotene Abhängigkeit (CLAUDE.md, Regel 1)"
+            exit 1
+          fi
+          echo "OK"
+
+  engine:
+    name: Engine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+        working-directory: packages/engine
+      - run: dart analyze --fatal-infos
+        working-directory: packages/engine
+      - run: dart test
+        working-directory: packages/engine
+
+  content:
+    name: Content
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+        working-directory: tool
+      # Prüft Schema, Referenzen und Abdeckungslücken im Katalog.
+      - run: dart run tool/validate.dart
+        continue-on-error: true   # bis Phase 1 implementiert ist
+
+  app:
+    name: App
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+        working-directory: apps/app
+        continue-on-error: true   # bis apps/app existiert
+      - run: flutter test
+        working-directory: apps/app
+        continue-on-error: true

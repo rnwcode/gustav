@@ -1,0 +1,50 @@
+# Schema für content/aktivitaeten/*.yaml
+#
+# Eine Aktivität ist alles, was in einem Tages-Slot landen kann: eine
+# Trainingseinheit, ein Suchspiel, eine Alltagsroutine, ein Ruhevorschlag.
+# Nicht jede trainiert einen Skill — genau deshalb trägt dasselbe Modell
+# später auch den erwachsenen Hund.
+
+id:                 string
+titel:              string
+satz:               string      # DER Satz für die Tagesansicht, ein bis zwei Zeilen
+typ:                enum        # training | beschaeftigung | alltag | ruhe | pflege
+trainiert_skill:    skill_id?   # null bei Beschäftigung
+
+bedarf:                         # die zweite Währung, je 0–3
+  koerperlich:      int
+  kopfarbeit:       int
+  nase:             int
+  sozial:           int
+  erholung:         int
+belastung:          int         # 0–3, wie viel Erregung danach übrig bleibt
+
+dauer_min:          int         # Minuten
+dauer_max:          int
+ort:                enum        # drinnen | draussen | unterwegs | egal
+fuer_ablenkung:     [int, int]  # nur bei typ=training: passende Stufen
+ist_auffrischung:   bool        # kurze Variante für gefestigte Skills
+
+hitzetauglich:      bool
+regentauglich:      bool
+dunkeltauglich:     bool
+gelenkbelastend:    bool
+saisonfenster:      [monat]?    # z. B. [10, 11, 12] für Silvestervorbereitung
+
+equipment:          [string]
+zweite_person:      bool
+min_alter_wochen:   int
+max_alter_wochen:   int?
+eignung:                        # gewichtet, filtert NIE hart
+  <rassegruppe>:    int         # -1 … +2
+
+varianzgruppe:      string      # die Sperrfrist hängt hier, nicht an der Aktivität
+sperrfrist_tage:    int
+
+illustration:       asset_id?   # verweist auf assets/illustrationen/<id>.svg
+anleitung:          [string]    # Schritte
+erfolgskriterium:   string      # woran der Halter merkt, dass es sitzt
+haeufige_fehler:    [string]
+troubleshooting:                # ersetzt den KI-Coach im MVP
+  - problem:        string
+    antwort:        string
