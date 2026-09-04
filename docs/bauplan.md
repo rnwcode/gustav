@@ -37,7 +37,7 @@ höchstens den lokalen Supabase-Stack), in unter zwei Sekunden.
 
 | Ebene | Kommando | Prüft |
 |---|---|---|
-| 1 Engine | `deno test infra/supabase/functions` | Zustandsautomat, Intervalle, Filter, Fixtures |
+| 1 Engine | `deno test --allow-read infra/supabase/functions` | Zustandsautomat, Intervalle, Filter, Fixtures |
 | 2 Content | `dart run tool/validate.dart` | Schema, Referenzen, Abdeckungslücken, `planer.yaml` |
 | 3 Simulator | `deno run infra/supabase/functions/_shared/planner/simulate.ts` | 12 Wochen als Text — liest sich das gut? |
 | 4 Widgets | `flutter test` | Screens, Goldens hell und dunkel |
@@ -82,7 +82,7 @@ Produkt im Kern fertig; alles Weitere ist Oberfläche und Content.
 - `tool/validate.dart`, `infra/supabase/functions/_shared/planner/simulate.ts`
 - Die acht Fixtures aus `datenmodell.md`
 
-**Fertig, wenn** `deno test infra/supabase/functions &&
+**Fertig, wenn** `deno test --allow-read infra/supabase/functions &&
 deno run infra/supabase/functions/_shared/planner/simulate.ts --check` grün ist
 und zwölf simulierte Wochen gelesen wurden, ohne zusammenzuzucken.
 

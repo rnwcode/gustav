@@ -46,7 +46,7 @@ jobs:
         working-directory: infra/supabase/functions
       - run: deno lint .
         working-directory: infra/supabase/functions
-      - run: deno test
+      - run: deno test --allow-read
         working-directory: infra/supabase/functions
 
   content:

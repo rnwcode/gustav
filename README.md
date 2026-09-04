@@ -39,7 +39,7 @@ npm i -g supabase && supabase start
 ## Täglicher Ablauf
 
 ```bash
-deno test infra/supabase/functions          # Planer-Logik, < 2 s, kein Netz nötig
+deno test --allow-read infra/supabase/functions   # Planer-Logik + Content-Loader, < 2 s
 dart run tool/validate.dart                 # Content: Schema, Referenzen, Lücken
 deno run infra/supabase/functions/_shared/planner/simulate.ts          # 12 Wochen als Text lesen
 deno run infra/supabase/functions/_shared/planner/simulate.ts --check  # Invarianten über 20 synthetische Hunde
