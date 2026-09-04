@@ -4,6 +4,13 @@ Pure functions: state in, weekly plan out. No network, no LLM, no unseeded rando
 
 ## Building blocks (done)
 
+`context.ts` — `buildContext()` is step 1: bundles `Dog`, `Household` and `WeeklyContext` with the
+values derived from them (`ageWeeks`, `lifeStage`, `heatSensitivity`, `weeksSinceArrival`,
+`LoadBudget`) against the same `today`, so later steps don't each re-derive them. Spec:
+`docs/specs/kontext-bauen.md` (German — product documentation). Deliberately does not translate
+`WeeklyCheckin` into `WeeklyContext`, and deliberately carries no season/weather field yet (no data
+source exists — backlog V1.1).
+
 `state_machine.ts` — `apply()` and `reportProblem()` turn an assessment into a new `SkillState`
 (level logic, status transitions, spaced repetition). Spec: `docs/specs/skill-zustandsautomat.md`
 (German — product documentation). Runs ahead of the actual planner and is a prerequisite for step 3
@@ -41,8 +48,8 @@ documentation). Deliberately does not attach a `Reason` (step 8) or cross-check 
 
 ## Planner steps 1–8
 
-1. Build context — dog, household, weekly context, load budget, season (open — mostly assembly of
-   the pieces above, plus season later)
+1. Build context — dog, household, weekly context, load budget (done, see `context.ts` above;
+   season/weather stays open, backlog V1.1)
 2. Fix slots — period length, empty slots, phase cap (open — `assignToDays` already takes
    `minEmptySlots`/`maxActiveSlots`/`maxTrainingSlots` as config, but computing period length and
    the recovery-need-dependent empty-slot count is still the caller's job)

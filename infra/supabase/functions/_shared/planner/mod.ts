@@ -21,6 +21,7 @@ export * from './models/activity.ts';
 export * from './models/checkin.ts';
 export * from './models/weekly_plan.ts';
 
+export * from './steps/context.ts';
 export * from './steps/state_machine.ts';
 export * from './steps/state_machine_config.ts';
 export * from './steps/load_budget.ts';
