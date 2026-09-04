@@ -3,6 +3,16 @@
 Reine Funktion: Zustand rein, Wochenplan raus. Kein Netzwerk, kein LLM,
 keine ungeseedeten Zufallszahlen.
 
+## Zustandsautomat (steht)
+
+`zustandsautomat.dart` — `wende()` und `meldeProblem()` verarbeiten eine
+Bewertung zu einem neuen `SkillStand` (Stufenlogik, Statuswechsel, Spaced
+Repetition). Spec: `docs/specs/skill-zustandsautomat.md`. Läuft vor dem
+eigentlichen Planer und ist Voraussetzung für Schritt 3 (fällige
+Auffrischungen).
+
+## Planer-Schritte 1–8 (offen)
+
 Ablauf (Details in `docs/datenmodell.md`):
 
 1. Kontext bauen — Hund, Haushalt, Wochenkontext, Belastungsbudget, Saison
