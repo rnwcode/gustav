@@ -19,6 +19,7 @@ class SkillFocus {
     required this.priority,
     required this.overdueDays,
     required this.isNewSkill,
+    required this.status,
   });
 
   final String skillId;
@@ -32,6 +33,12 @@ class SkillFocus {
   final int overdueDays;
 
   final bool isNewSkill;
+
+  /// `notStarted` for a new skill (`isNewSkill == true`), otherwise the
+  /// skill's actual status — used by hard filtering (planner step 4) to
+  /// admit only refresher activities once a skill is `consolidated` or in
+  /// `maintenance`.
+  final SkillStatus status;
 }
 
 /// One need dimension with an unmet gap from the previous period.
@@ -77,6 +84,7 @@ CandidatePool collectCandidates({
   final priorityById = <String, int>{};
   final overdueById = <String, int>{};
   final newSkillIds = <String>{};
+  final statusById = <String, SkillStatus>{};
 
   for (final entry in skillStates.entries) {
     final state = entry.value;
@@ -87,6 +95,7 @@ CandidatePool collectCandidates({
       ids.add(entry.key);
       levelsById[entry.key] = state.levels;
       overdueById[entry.key] = periodEnd.difference(dueAt).inDays;
+      statusById[entry.key] = state.status;
     }
   }
 
@@ -96,6 +105,7 @@ CandidatePool collectCandidates({
     ids.add(priority.skillIdOrTopic);
     levelsById[priority.skillIdOrTopic] = state.levels;
     priorityById[priority.skillIdOrTopic] = priority.weight;
+    statusById[priority.skillIdOrTopic] = state.status;
   }
 
   for (final skill in catalog) {
@@ -118,6 +128,7 @@ CandidatePool collectCandidates({
           priority: priorityById[id] ?? 0,
           overdueDays: overdueById[id] ?? 0,
           isNewSkill: newSkillIds.contains(id),
+          status: statusById[id] ?? SkillStatus.notStarted,
         ),
       )
       .toList();
