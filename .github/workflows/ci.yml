@@ -48,6 +48,9 @@ jobs:
         working-directory: infra/supabase/functions
       - run: deno test --allow-read
         working-directory: infra/supabase/functions
+      # docs/bauplan.md, Phase 1 "Fertig, wenn": der Simulator bleibt grün.
+      - run: deno run --allow-read _shared/planner/simulate.ts --check
+        working-directory: infra/supabase/functions
 
   content:
     name: Content
