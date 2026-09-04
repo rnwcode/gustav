@@ -53,6 +53,11 @@ demanding activity on the period's uniquely shortest day, only rest/enrichment a
 and never two maximum-arousal days in a row. Spec: `docs/specs/zuweisen.md` (German — product
 documentation). Deliberately does not attach a `Reason` (step 8) or cross-check the result (step 7).
 
+`cross_check.ts` — `crossCheckPeriod()` is step 7: verifies need coverage, the training cap and that
+at least one slot is empty, and corrects the first failing check with a single swap (never more than
+one, and never re-running step 6). Spec: `docs/specs/gegenpruefen.md` (German — product
+documentation).
+
 ## Planner steps 1–8
 
 1. Build context — dog, household, weekly context, load budget (done, see `context.ts` above;
@@ -64,9 +69,7 @@ documentation). Deliberately does not attach a `Reason` (step 8) or cross-check 
    safety, see `activity_filter.ts` above)
 5. Score — weighted sum, deterministic tie-break on the ID (done, see `scoring.ts` above)
 6. Assign — day by day, load rules (done, see `assignment.ts` above)
-7. Cross-check the week — need coverage, training cap, empty slot (open — the next step: verifies
-   the output of `assignToDays` and swaps the weakest slot if a check fails, per
-   `docs/datenmodell.md`)
+7. Cross-check the week — need coverage, training cap, empty slot (done, see `cross_check.ts` above)
 8. Word it — frame and reasoning from structured data (open)
 
 The weights in step 5 are tuned, not derived. They only change together with a simulator run
