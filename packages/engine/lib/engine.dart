@@ -18,6 +18,8 @@ export 'src/models/skill_state.dart';
 export 'src/models/weekly_plan.dart';
 export 'src/planner/activity_filter.dart';
 export 'src/planner/activity_filter_config.dart';
+export 'src/planner/assignment.dart';
+export 'src/planner/assignment_config.dart';
 export 'src/planner/candidates.dart';
 export 'src/planner/candidates_config.dart';
 export 'src/planner/load_budget.dart';
