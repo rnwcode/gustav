@@ -39,10 +39,11 @@ höchstens den lokalen Supabase-Stack), in unter zwei Sekunden.
 |---|---|---|
 | 1 Engine | `deno test --allow-read infra/supabase/functions` | Zustandsautomat, Intervalle, Filter, Fixtures |
 | 2 Content | `dart run tool/validate.dart` | Schema, Referenzen, Abdeckungslücken, `planer.yaml` |
-| 3 Simulator | `deno run --allow-read infra/supabase/functions/_shared/planner/simulate.ts` | 12 Wochen als Text — liest sich das gut? |
-| 4 Widgets | `flutter test` | Screens, Goldens hell und dunkel |
-| 5 Integration | `flutter test integration_test` | Onboarding → Periode 1 (gegen lokale Edge Function) → Check-in → Periode 2 |
-| 6 Gerät | Debug-Menü | Zeitreise (Server-Fake-Clock), Periode springen, Zustand zurücksetzen |
+| 3 Migrationen | `supabase test db` (pgTAP, siehe `infra/supabase/README.md`) | RLS je Zustandstabelle, Check-Constraints |
+| 4 Simulator | `deno run --allow-read infra/supabase/functions/_shared/planner/simulate.ts` | 12 Wochen als Text — liest sich das gut? |
+| 5 Widgets | `flutter test` | Screens, Goldens hell und dunkel |
+| 6 Integration | `flutter test integration_test` | Onboarding → Periode 1 (gegen lokale Edge Function) → Check-in → Periode 2 |
+| 7 Gerät | Debug-Menü | Zeitreise (Server-Fake-Clock), Periode springen, Zustand zurücksetzen |
 
 ### Der Simulator ist das wichtigste Werkzeug
 
@@ -81,6 +82,8 @@ Produkt im Kern fertig; alles Weitere ist Oberfläche und Content.
 - Planer, Schritte 1–7; Texten (Schritt 8) als Template
 - `tool/validate.dart`, `infra/supabase/functions/_shared/planner/simulate.ts`
 - Die acht Fixtures aus `datenmodell.md`
+- Zustandstabellen als Migration (`infra/supabase/migrations/0001_init.sql`),
+  RLS je Tabelle, pgTAP-Tests
 
 **Fertig, wenn** `deno test --allow-read infra/supabase/functions &&
 deno run --allow-read infra/supabase/functions/_shared/planner/simulate.ts --check` grün ist
