@@ -14,37 +14,69 @@ jobs:
 
       # Regel 2 aus CLAUDE.md: Das Produkt ist zeitbasiert. Ohne Fake-Clock
       # sind Simulator, Integrationstest und Debug-Zeitreise nicht baubar.
-      - name: Kein DateTime.now()
+      - name: Kein Date.now() / new Date() außerhalb der Clock
         run: |
-          if grep -rn --include='*.dart' 'DateTime\.now()' . \
-               | grep -v 'packages/engine/lib/src/clock.dart'; then
-            echo "::error::DateTime.now() gefunden — Zeit kommt aus Clock (CLAUDE.md, Regel 2)"
+          if grep -rnE '(Date\.now\(\)|new Date\(\))' \
+               --include='*.ts' infra/supabase/functions \
+               | grep -v 'infra/supabase/functions/_shared/planner/clock.ts'; then
+            echo "::error::Date.now()/new Date() gefunden — Zeit kommt aus Clock (CLAUDE.md, Regel 2)"
             exit 1
           fi
           echo "OK"
 
-      # Regel 1: Die Engine bleibt frei von Flutter, IO und Supabase.
-      - name: Engine bleibt rein
+      # Regel 1: Die Planer-Logik bleibt frei von IO und Netzwerk.
+      - name: Planer bleibt rein
         run: |
-          if grep -rnE "import 'package:(flutter|supabase)" packages/engine/lib \
-             || grep -rn "import 'dart:io'" packages/engine/lib; then
-            echo "::error::Engine hat eine verbotene Abhängigkeit (CLAUDE.md, Regel 1)"
+          if grep -rnE "Deno\.(readTextFile|readFile|env|writeFile)|fetch\(" \
+               infra/supabase/functions/_shared/planner; then
+            echo "::error::Planer-Logik hat eine verbotene Abhängigkeit (CLAUDE.md, Regel 1)"
             exit 1
           fi
           echo "OK"
 
-  engine:
-    name: Engine
+  planner:
+    name: Planer
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dart-lang/setup-dart@v1
-      - run: dart pub get
-        working-directory: packages/engine
-      - run: dart analyze --fatal-infos
-        working-directory: packages/engine
-      - run: dart test
-        working-directory: packages/engine
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno fmt --check .
+        working-directory: infra/supabase/functions
+      - run: deno lint .
+        working-directory: infra/supabase/functions
+      - run: deno test --allow-read
+        working-directory: infra/supabase/functions
+      # docs/bauplan.md, Phase 1 "Fertig, wenn": der Simulator bleibt grün.
+      - run: deno run --allow-read _shared/planner/simulate.ts --check
+        working-directory: infra/supabase/functions
+
+  migrations:
+    name: Migrationen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Postgres + pgTAP installieren
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-contrib pgtap
+          sudo service postgresql start
+      # Kein echter Supabase-Stack (kein Docker-in-Docker nötig): der Helper
+      # stubt nur, was auth.uid()/auth.users bräuchten. Siehe
+      # infra/supabase/migrations/tests/helpers/local_auth_stub.sql.
+      - name: Migrationen anwenden, RLS-Tests laufen lassen
+        run: |
+          sudo -u postgres psql -c "create database gustav_ci;"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d gustav_ci \
+            -f infra/supabase/migrations/tests/helpers/local_auth_stub.sql
+          for f in infra/supabase/migrations/*.sql; do
+            echo "-- anwenden: $f"
+            sudo -u postgres psql -v ON_ERROR_STOP=1 -d gustav_ci -f "$f"
+          done
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d gustav_ci \
+            -f infra/supabase/migrations/tests/helpers/local_grants.sql
+          sudo -u postgres pg_prove -d gustav_ci infra/supabase/migrations/tests/*.sql
 
   content:
     name: Content

@@ -91,9 +91,13 @@ Damit lässt sich KI-Tooling voll nutzen, es gibt Versionierung und Review, und
 Übungen ändern sich ohne App-Release.
 
 **Zustand** (Supabase): Hund, Haushalt, Skill-Stände, Perioden, Slots,
-Check-ins. Gehört einem Nutzer, RLS-geschützt, lokal gespiegelt.
+Check-ins. Gehört einem Nutzer, RLS-geschützt; die App cached eine
+schreibgeschützte Kopie lokal für Ansicht und Abhaken offline (CLAUDE.md,
+Regel 9) — Quelle der Wahrheit bleibt Supabase.
 
-Der Planer selbst ist reiner Dart-Code ohne Netzwerkzugriff — deshalb testbar.
+Der Planer selbst ist eine reine TypeScript-Funktion (Supabase Edge
+Function, Deno) ohne eigenen Netzwerkzugriff nach außen — deshalb testbar,
+trotz serverseitiger Ausführung.
 
 ## Hund und Haushalt
 

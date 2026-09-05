@@ -1,5 +1,5 @@
 name: tool
-description: Validator, Simulator und Seed-Skript für Gustav.
+description: Content-Validator und Seed-Skript für Gustav (Simulator siehe infra/supabase/functions/_shared/planner/simulate.ts).
 publish_to: none
 version: 0.1.0
 
@@ -7,8 +7,6 @@ environment:
   sdk: ">=3.4.0 <4.0.0"
 
 dependencies:
-  engine:
-    path: ../packages/engine
   yaml: ^3.1.2
   args: ^2.5.0
   path: ^1.9.0

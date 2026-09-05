@@ -1,0 +1,162 @@
+import type { Activity, Needs } from '../models/activity.ts';
+
+const ZERO_NEEDS: Needs = { physical: 0, mentalWork: 0, scent: 0, social: 0, recovery: 0 };
+
+function fixtureActivity(overrides: Partial<Activity> & Pick<Activity, 'id'>): Activity {
+  return {
+    title: `[Fixture] ${overrides.id}`,
+    sentence: 'Test-Fixture, kein echter Anleitungstext.',
+    type: 'enrichment',
+    trainsSkill: null,
+    needs: ZERO_NEEDS,
+    arousal: 1,
+    durationMin: 5,
+    durationMax: 15,
+    location: 'any',
+    forDistraction: null,
+    isRefresher: false,
+    heatSuitable: true,
+    rainSuitable: true,
+    darknessSuitable: true,
+    jointStraining: false,
+    seasonalWindow: null,
+    equipment: [],
+    secondPerson: false,
+    minAgeWeeks: 8,
+    maxAgeWeeks: null,
+    suitability: new Map(),
+    varianceGroup: overrides.id,
+    cooldownDays: 3,
+    illustration: null,
+    instructions: ['Test-Fixture, keine echte Anleitung.'],
+    successCriterion: 'Test-Fixture, kein echtes Erfolgskriterium.',
+    commonMistakes: [],
+    troubleshooting: [],
+    ...overrides,
+  };
+}
+
+/**
+ * Synthetic activities for the simulator and integration tests — NOT the
+ * real content catalog (see `skills.ts` for why). Every id is prefixed
+ * `fixture_`. Covers all five `ActivityType`s, all five `NeedDimension`s,
+ * training activities for every `FIXTURE_SKILLS` entry across a spread of
+ * distraction ranges, and a couple of breed-suitability entries — enough
+ * variety for the simulator to produce a plan that isn't trivially empty,
+ * without pretending to be the real forty-activity MVP catalog.
+ */
+export const FIXTURE_ACTIVITIES: readonly Activity[] = [
+  fixtureActivity({
+    id: 'fixture_name_focus_intro',
+    type: 'training',
+    trainsSkill: 'fixture_name_focus',
+    forDistraction: [0, 1],
+    arousal: 1,
+    minAgeWeeks: 8,
+  }),
+  fixtureActivity({
+    id: 'fixture_name_focus_outside',
+    type: 'training',
+    trainsSkill: 'fixture_name_focus',
+    forDistraction: [2, 3],
+    arousal: 2,
+    location: 'outdoors',
+    minAgeWeeks: 8,
+  }),
+  fixtureActivity({
+    id: 'fixture_sit_basic',
+    type: 'training',
+    trainsSkill: 'fixture_sit',
+    forDistraction: [0, 1],
+    arousal: 1,
+    minAgeWeeks: 9,
+  }),
+  fixtureActivity({
+    id: 'fixture_sit_refresher',
+    type: 'training',
+    trainsSkill: 'fixture_sit',
+    forDistraction: [2, 5],
+    arousal: 2,
+    location: 'outdoors',
+    isRefresher: true,
+    minAgeWeeks: 9,
+  }),
+  fixtureActivity({
+    id: 'fixture_recall_garden',
+    type: 'training',
+    trainsSkill: 'fixture_recall',
+    forDistraction: [0, 2],
+    arousal: 2,
+    location: 'outdoors',
+    minAgeWeeks: 10,
+    suitability: new Map([['herding', 1], ['hunting', 1]]),
+  }),
+  fixtureActivity({
+    id: 'fixture_recall_park',
+    type: 'training',
+    trainsSkill: 'fixture_recall',
+    forDistraction: [3, 5],
+    arousal: 3,
+    location: 'outdoors',
+    minAgeWeeks: 10,
+    suitability: new Map([['herding', 1], ['molosser', -1]]),
+  }),
+  fixtureActivity({
+    id: 'fixture_leash_calm_street',
+    type: 'training',
+    trainsSkill: 'fixture_leash_walking',
+    forDistraction: [1, 3],
+    arousal: 2,
+    location: 'outdoors',
+    equipment: ['leash'],
+    minAgeWeeks: 12,
+  }),
+  fixtureActivity({
+    id: 'fixture_settle_cafe',
+    type: 'training',
+    trainsSkill: 'fixture_settle',
+    forDistraction: [2, 4],
+    arousal: 2,
+    location: 'outdoors',
+    secondPerson: true,
+    minAgeWeeks: 16,
+  }),
+  fixtureActivity({
+    id: 'fixture_snuffle_mat',
+    needs: { ...ZERO_NEEDS, scent: 3, mentalWork: 2 },
+    arousal: 1,
+    location: 'indoors',
+    cooldownDays: 10,
+  }),
+  fixtureActivity({
+    id: 'fixture_food_puzzle',
+    needs: { ...ZERO_NEEDS, mentalWork: 3 },
+    arousal: 1,
+    location: 'indoors',
+    cooldownDays: 7,
+  }),
+  fixtureActivity({
+    id: 'fixture_sniff_walk',
+    type: 'everyday',
+    needs: { ...ZERO_NEEDS, physical: 2, scent: 2, social: 1 },
+    arousal: 2,
+    location: 'outdoors',
+    cooldownDays: 3,
+  }),
+  fixtureActivity({
+    id: 'fixture_calm_evening',
+    type: 'rest',
+    needs: { ...ZERO_NEEDS, recovery: 3 },
+    arousal: 0,
+    location: 'indoors',
+    cooldownDays: 0,
+  }),
+  fixtureActivity({
+    id: 'fixture_brushing',
+    type: 'care',
+    needs: { ...ZERO_NEEDS, social: 2, recovery: 1 },
+    arousal: 0,
+    location: 'indoors',
+    cooldownDays: 0,
+  }),
+];

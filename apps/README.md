@@ -14,12 +14,14 @@ dieselbe. Sie lässt sich nach dem ersten Store-Upload nie wieder ändern.
 Der Anzeigename ist davon unabhängig und jederzeit änderbar; Bindestriche
 sind in Android-IDs verboten, deshalb `isjust` statt `is-just`.
 
-Danach in `gustav/pubspec.yaml` die Engine einhängen:
+Danach in `gustav/pubspec.yaml` die Abhängigkeiten für Client und lokales
+Caching einhängen — keine Planer-Logik in der App (CLAUDE.md,
+Architektur-Abschnitt): die liegt als Edge Function in
+`infra/supabase/functions/`, die App ruft sie nur auf.
 
 ```yaml
 dependencies:
-  engine:
-    path: ../../packages/engine
+  supabase_flutter: ^2.5.0
   flutter_riverpod: ^2.5.0
   drift: ^2.20.0
 ```
@@ -34,5 +36,7 @@ Vorgesehene Features für den MVP: `onboarding`, `periode`, `tag`,
 `aktivitaet`, `checkin`, `fortschritt`, `debug`.
 
 `debug` enthält die Zeitreise — Periode springen, Zustand zurücksetzen,
-Plan neu erzeugen. Ohne die ist ein zeitbasiertes Produkt nicht bedienbar
-zu testen.
+Plan neu erzeugen. Die Zeitreise stellt die Fake-Clock der (lokalen)
+Edge Function, nicht die Uhr des Geräts — die App selbst hat keine
+Zeitlogik. Ohne die ist ein zeitbasiertes Produkt nicht bedienbar zu
+testen.

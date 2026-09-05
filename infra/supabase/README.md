@@ -35,6 +35,23 @@ supabase db push                    # anwenden
 Migrationen werden **nie zuerst auf der Produktion angewendet.** Erst Staging,
 dann nach Sichtprüfung Produktion.
 
+## Migrationstests
+
+Jede Zustandstabelle hat einen eigenen pgTAP-Test in `migrations/tests/`
+(RLS aktiviert, eigene Zeilen sichtbar, fremde nicht, die wichtigsten
+Check-Constraints). Offizieller Testlauf gegen den echten Stack:
+
+```bash
+supabase start
+supabase test db
+```
+
+`migrations/tests/helpers/` stubt `auth.uid()`/`auth.users` und die Rollen
+`authenticated`/`anon` nur für einen CI-Lauf **ohne** den vollen
+Supabase-Stack (kein Docker-in-Docker nötig, siehe der Job „Migrationen" in
+`.github/workflows/ci.yml`) — gegen ein echtes Supabase-Projekt nie
+anwenden, dort existiert das alles schon.
+
 ## Der kostenlose Plan — was er kann und wo er endet
 
 Zum Entwickeln und für Staging reicht er bequem. Die Grenzen, die man kennen

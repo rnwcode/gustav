@@ -3,7 +3,6 @@
 .packages
 build/
 pubspec.lock
-!packages/engine/pubspec.lock
 .flutter-plugins
 .flutter-plugins-dependencies
 *.iml

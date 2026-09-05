@@ -9,29 +9,41 @@ läuft nebenher.
 | Strang | Woche |
 |---|---|
 | Validierung (Markt, Gespräche, Trainerin) | 1–4, nebenher |
-| Phase 1 — Engine, reines Dart | 1–3 |
+| Phase 1 — Planer, Supabase Edge Function (TypeScript) | 1–3 |
 | **Content — kritischer Pfad, 40 Aktivitäten** | **1–8** |
-| Phase 2 — App, Flutter, lokal | 3–7 |
-| Phase 3 — Backend und Sync | 7–9 |
+| Phase 2 — App, Flutter, Client gegen die Edge Function | 3–7 |
+| Phase 3 — Auth, Sync, gehostete Instanz | 7–9 |
 | Phase 4 — Geld und Beta | 9–12 |
 | Phase 5 — Launch DACH | ab 12 |
 
 Der Code ist bei diesem Zeitbudget nicht der Engpass — **der Content ist es**.
 Deshalb startet er in Woche 1.
 
+**Architekturwechsel:** Der Planer läuft serverseitig (Supabase Edge
+Function, TypeScript/Deno), nicht mehr als eingebettetes Dart-Paket in der
+App (CLAUDE.md, Architektur-Abschnitt). Damit rückt vor, was früher Phase
+3 war: Phase 1 braucht von Anfang an eine — zunächst lokale —
+Supabase-Instanz (`supabase start`) als Laufzeitumgebung für die
+Funktion. Phase 2 (App) ist entsprechend von Anfang an ein Client, der
+gegen diese Funktion spricht, nicht gegen ein lokal eingebettetes Paket.
+Eine unmittelbare Folge: Ein neuer Wochenplan lässt sich nur mit
+Verbindung erzeugen — die App cached erzeugte Pläne für die Ansicht
+offline, aber die Erzeugung selbst nicht mehr (siehe Phase 2).
+
 ## Testebenen
 
-Ebene 1 bis 3 laufen ohne Flutter, ohne Emulator, ohne Netz, in unter zwei
-Sekunden.
+Ebene 1 bis 3 laufen ohne Flutter, ohne Emulator, ohne Netz (Ebene 3 startet
+höchstens den lokalen Supabase-Stack), in unter zwei Sekunden.
 
 | Ebene | Kommando | Prüft |
 |---|---|---|
-| 1 Engine | `dart test packages/engine` | Zustandsautomat, Intervalle, Filter, Fixtures |
+| 1 Engine | `deno test --allow-read infra/supabase/functions` | Zustandsautomat, Intervalle, Filter, Fixtures |
 | 2 Content | `dart run tool/validate.dart` | Schema, Referenzen, Abdeckungslücken, `planer.yaml` |
-| 3 Simulator | `dart run tool/simulate.dart` | 12 Wochen als Text — liest sich das gut? |
-| 4 Widgets | `flutter test` | Screens, Goldens hell und dunkel |
-| 5 Integration | `flutter test integration_test` | Onboarding → Periode 1 → Check-in → Periode 2 |
-| 6 Gerät | Debug-Menü | Zeitreise, Periode springen, Zustand zurücksetzen |
+| 3 Migrationen | `supabase test db` (pgTAP, siehe `infra/supabase/README.md`) | RLS je Zustandstabelle, Check-Constraints |
+| 4 Simulator | `deno run --allow-read infra/supabase/functions/_shared/planner/simulate.ts` | 12 Wochen als Text — liest sich das gut? |
+| 5 Widgets | `flutter test` | Screens, Goldens hell und dunkel |
+| 6 Integration | `flutter test integration_test` | Onboarding → Periode 1 (gegen lokale Edge Function) → Check-in → Periode 2 |
+| 7 Gerät | Debug-Menü | Zeitreise (Server-Fake-Clock), Periode springen, Zustand zurücksetzen |
 
 ### Der Simulator ist das wichtigste Werkzeug
 
@@ -53,47 +65,59 @@ erheblich schneller als ändern, neu starten, lesen. Details in `tool/README.md`
 
 ### Die Fake-Clock ist keine Kür
 
-Ruft auch nur eine Stelle `DateTime.now()` auf, lassen sich weder Simulator
-noch Integrationstest noch Debug-Menü bauen. Die Regel steht in CLAUDE.md und
-wird von der CI erzwungen. Nachträglich ist das eine Woche Arbeit.
+Ruft auch nur eine Stelle in `infra/supabase/functions/` `Date.now()` oder
+`new Date()` außerhalb der injizierten Zeitquelle auf, lassen sich weder
+Simulator noch Integrationstest noch Debug-Menü bauen. Die Regel steht in
+CLAUDE.md und wird von der CI erzwungen. Nachträglich ist das eine Woche
+Arbeit.
 
-## Phase 1 — Engine, ohne Oberfläche (Woche 1–3)
+## Phase 1 — Planer als Edge Function, ohne Oberfläche (Woche 1–3)
 
-Ein reines Dart-Paket, das aus Zustand einen Wochenplan macht. Am Ende dieser
-Phase ist das Produkt im Kern fertig; alles Weitere ist Oberfläche und Content.
+Eine reine TypeScript-Funktion auf Deno, die aus Zustand einen Wochenplan
+macht, lokal betrieben über `supabase start`. Am Ende dieser Phase ist das
+Produkt im Kern fertig; alles Weitere ist Oberfläche und Content.
 
 - Datenklassen und Enums aus `datenmodell.md`
 - Zustandsautomat und Spaced Repetition
 - Planer, Schritte 1–7; Texten (Schritt 8) als Template
-- `tool/validate.dart`, `tool/simulate.dart`
+- `tool/validate.dart`, `infra/supabase/functions/_shared/planner/simulate.ts`
 - Die acht Fixtures aus `datenmodell.md`
+- Zustandstabellen als Migration (`infra/supabase/migrations/0001_init.sql`),
+  RLS je Tabelle, pgTAP-Tests
 
-**Fertig, wenn** `dart test && dart run tool/simulate.dart --check` grün ist
+**Fertig, wenn** `deno test --allow-read infra/supabase/functions &&
+deno run --allow-read infra/supabase/functions/_shared/planner/simulate.ts --check` grün ist
 und zwölf simulierte Wochen gelesen wurden, ohne zusammenzuzucken.
 
-## Phase 2 — App, vollständig lokal (Woche 3–7)
+## Phase 2 — App als Client (Woche 3–7)
 
-Läuft komplett offline gegen lokale Persistenz (Drift oder Isar) und den
-YAML-Katalog. Das ist keine Zwischenstufe, sondern die Zielarchitektur: Der
-Plan muss auf der Hundewiese ohne Empfang funktionieren.
+Die App ruft die Edge Function für Onboarding, Plan-Erzeugung und Check-in
+auf und cached das Ergebnis lokal (Drift oder Isar) für die Ansicht und das
+Abhaken offline. Das ist bewusst keine lokal-first-Architektur mehr: Ein
+neuer Plan entsteht nur mit Verbindung; ohne Netz zeigt die App den
+zuletzt geladenen Plan und sammelt Häkchen zum späteren Sync
+(CLAUDE.md, Regel 9).
 
 Sechs Screens: Onboarding, Periodenübersicht, Tagesansicht, Übungsdetail mit
-Selbsteinschätzung, Check-in, Fortschritt. Dazu das Debug-Menü mit Zeitreise.
+Selbsteinschätzung, Check-in, Fortschritt. Dazu das Debug-Menü mit Zeitreise
+(stellt die Zeitquelle der lokalen Edge Function, nicht die App-Uhr).
 
 Die Reihenfolge im Einstieg steht schon jetzt fest, auch wenn hier noch nichts
 verkauft wird: Onboarding, **Plan erzeugen, Plan zeigen**, dann erst der Punkt,
 an dem später die Paywall sitzt. Dieser Punkt existiert ab Phase 2 als eigene
 Route, vorerst ohne Wirkung.
 
-**Fertig, wenn** `flutter test integration_test` Onboarding bis Periode 2 im
-Flugmodus durchläuft — und die App eine Woche lang mit einem echten Hund
-benutzt wurde.
+**Fertig, wenn** `flutter test integration_test` Onboarding bis Periode 2
+gegen die lokale Edge Function durchläuft — und die App eine Woche lang mit
+einem echten Hund benutzt wurde.
 
-## Phase 3 — Backend und Sync (Woche 7–9)
+## Phase 3 — Auth, Sync, gehostete Instanz (Woche 7–9)
 
-Supabase gehostet, Region Frankfurt, Start auf dem kostenlosen Plan. Lokal
-wird gegen `supabase start` entwickelt; die Cloud kommt erst dran, wenn lokal
-alles läuft. Auth beginnt anonym, Account erst beim Kauf.
+Die Planer-Logik selbst steht bereits seit Phase 1; diese Phase bringt
+Supabase auf den gehosteten Stand (Region Frankfurt, Start auf dem
+kostenlosen Plan), Auth (anonym, Account erst beim Kauf) und den Sync
+lokal gecachter Häkchen. Lokal wird weiter gegen `supabase start`
+entwickelt; die Cloud kommt erst dran, wenn lokal alles läuft.
 
 Details, Grenzen des kostenlosen Plans und das Pflichtprogramm vor dem Launch:
 `infra/supabase/README.md`.
