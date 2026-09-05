@@ -1,42 +1,28 @@
 # Apps
 
-`gustav/` wird lokal erzeugt, weil `flutter create` die Plattformordner für
-iOS und Android generiert:
+`gustav/` is an Expo (React Native, TypeScript) app — see
+`gustav/README.md` and the repo-root `CLAUDE.md` (Architektur-Abschnitt)
+for why it holds no planner logic: that lives as an Edge Function in
+`infra/supabase/functions/`, the app only calls it and reads/writes the
+state rows RLS already scopes to the signed-in user.
 
 ```bash
-cd apps
-flutter create --org com.isjust --project-name gustav \
-  --platforms=ios,android gustav
+cd apps/gustav
+npm install
+cp .env.example .env.local   # fill in EXPO_PUBLIC_SUPABASE_ANON_KEY
+npm run start
 ```
 
-**Die Application-ID ist `com.isjust.gustav`** — auf beiden Plattformen
-dieselbe. Sie lässt sich nach dem ersten Store-Upload nie wieder ändern.
-Der Anzeigename ist davon unabhängig und jederzeit änderbar; Bindestriche
-sind in Android-IDs verboten, deshalb `isjust` statt `is-just`.
+State management is Zustand (`src/state/`, and each feature's own
+`data/*Store.ts`), routing is Expo Router (`app/`), feature code is
+feature-first (`src/features/<feature>/{data,domain,ui}`), and the design
+system lives in `src/design/` — every screen sources color/type/spacing
+from `src/design/tokens.ts` so a palette change never touches a screen
+file.
 
-Danach in `gustav/pubspec.yaml` die Abhängigkeiten für Client und lokales
-Caching einhängen — keine Planer-Logik in der App (CLAUDE.md,
-Architektur-Abschnitt): die liegt als Edge Function in
-`infra/supabase/functions/`, die App ruft sie nur auf.
-
-```yaml
-dependencies:
-  supabase_flutter: ^2.5.0
-  flutter_riverpod: ^2.5.0
-  drift: ^2.20.0
-```
-
-Ordner feature-first (CLAUDE.md, Regel 4):
-
-```
-lib/features/<feature>/{data,domain,ui}
-```
-
-Vorgesehene Features für den MVP: `onboarding`, `periode`, `tag`,
-`aktivitaet`, `checkin`, `fortschritt`, `debug`.
-
-`debug` enthält die Zeitreise — Periode springen, Zustand zurücksetzen,
-Plan neu erzeugen. Die Zeitreise stellt die Fake-Clock der (lokalen)
-Edge Function, nicht die Uhr des Geräts — die App selbst hat keine
-Zeitlogik. Ohne die ist ein zeitbasiertes Produkt nicht bedienbar zu
-testen.
+Implemented features: `onboarding` (six steps), `plan` (Tagesansicht +
+Übung/Bewertung). Not yet built, but the module layout is meant to take
+them the same way: `periode` (Wochenübersicht), `checkin`
+(Planungstag-Check-in), `fortschritt`, `debug` (time travel — jumps the
+local Edge Function's fake clock, not the device clock; the app itself
+has no time logic, CLAUDE.md Regel 2).

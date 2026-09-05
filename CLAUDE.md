@@ -15,16 +15,19 @@ Nicht: ein Kurskatalog zum Abarbeiten. Nicht: ein durchgetakteter Tagesplan.
 ## Architektur — nicht verhandelbar
 
 **Die gesamte Business-Logik (Planer, Zustandsautomat, Scoring, Zuweisung)
-läuft serverseitig als Supabase Edge Function, nicht client-seitig in
-Dart.** Grund: Logik- und Gewichtsänderungen sollen sofort bei allen
+läuft serverseitig als Supabase Edge Function, nicht client-seitig in der
+App.** Grund: Logik- und Gewichtsänderungen sollen sofort bei allen
 Nutzern wirken, ohne an App-Release-Zyklen zu hängen. Damit einher geht
 eine bewusste Abkehr vom lokal-first-Anspruch für die Plan**erzeugung**
 (siehe Regel 9). Ein früherer Anlauf mit der Logik in einem Dart-Paket
 (`packages/engine/`) wurde deshalb wieder abgebaut — sollten davon Reste
 auftauchen, sind sie tot und gehören entfernt, nicht weitergepflegt.
+Die App selbst war ursprünglich Flutter; sie ist jetzt Expo (React
+Native, TypeScript) — ein reiner Technologiewechsel auf der Anzeigeseite,
+an dieser Architekturgrenze ändert er nichts.
 
 1. Business-Logik lebt ausschließlich in `infra/supabase/functions/`
-   (TypeScript auf Deno). Keine Abhängigkeit auf Flutter oder eine
+   (TypeScript auf Deno). Keine Abhängigkeit auf die App oder eine
    bestimmte App-Version — eine Edge Function bedient jeden Client, der
    sie aufruft, unabhängig vom Build-Stand seiner App.
 
@@ -33,13 +36,20 @@ auftauchen, sind sie tot und gehören entfernt, nicht weitergepflegt.
    Wochenschleife nicht testbar (Simulator, Property-Tests, Zeitreise in
    der Testsuite).
 
-3. Zustandsverwaltung in der App ausschließlich Riverpod. Kein `setState`
-   in Feature-Code, kein zweites State-Management „nur hier kurz". Die
-   App enthält keine Planer-Logik, nur Anzeige, Eingabe und lokales
-   Caching der Server-Antworten.
+3. Die App ist Expo (React Native, TypeScript), Routing ausschließlich
+   Expo Router (`app/`), Zustandsverwaltung ausschließlich Zustand
+   (`src/state/`, je Feature `data/*Store.ts`). Kein zweites
+   State-Management „nur hier kurz", kein Redux, kein Context-basiertes
+   Ad-hoc-State. Die App enthält keine Planer-Logik, nur Anzeige,
+   Eingabe und lokales Caching der Server-Antworten. (Ein früherer
+   Anlauf mit Flutter/Riverpod wurde deshalb verworfen — siehe Kopf
+   dieses Abschnitts; Reste davon sind tot.)
 
-4. Ordner feature-first: `apps/gustav/lib/features/<feature>/{data,domain,ui}`.
-   Kein globales `widgets/` oder `utils/`.
+4. Ordner feature-first: `apps/gustav/src/features/<feature>/{data,domain,ui}`.
+   Kein globales `widgets/` oder `utils/`. Geteilte Design-Bausteine
+   (Tokens, Farben, Typografie, wiederverwendbare Komponenten) leben in
+   `apps/gustav/src/design/` — jeder Screen bezieht Farbe/Typografie/
+   Abstand von dort, nie als Literal im Screen-Code.
 
 5. Content ist Daten, nie Code. Übungen und Skills leben als YAML in
    `content/`, werden validiert und geseedet — niemals als Literale im
@@ -94,9 +104,10 @@ Commit-Nachrichten und Testbeschreibungen in `infra/supabase/functions/`,
 Fachdomäne betrifft (also `Skill`, `Activity`, `WeeklyPlan`, `Load`, nicht
 `Aktivitaet`/`Wochenplan`/`Belastung`). Kein Denglisch, keine gemischten
 Bezeichner. Die Business-Logik ist TypeScript auf Deno
-(`infra/supabase/functions/`), die App ist Dart/Flutter (`apps/`) — beide
-Laufzeiten sprechen nur über die in `docs/datenmodell.md` beschriebenen
-Datenstrukturen miteinander, nie über geteilten Code.
+(`infra/supabase/functions/`), die App ist TypeScript auf Expo/React
+Native (`apps/`) — beide Laufzeiten sprechen nur über die in
+`docs/datenmodell.md` beschriebenen Datenstrukturen miteinander, nie über
+geteilten Code.
 
 **Nur der Content selbst bleibt Deutsch:** die YAML-Dateien in `content/`
 (Skills, Aktivitäten, `planer.yaml`) und alle nutzersichtbaren Texte in der

@@ -1,17 +1,35 @@
-# gustav
+# Gustav
 
-A new Flutter project.
+Expo (React Native, TypeScript) client for Gustav — a weekly planner for
+dog owners. Holds no planner logic itself; see the repo-root `CLAUDE.md`
+and `apps/README.md`.
 
-## Getting Started
+## Getting started
 
-This project is a starting point for a Flutter application.
+```bash
+npm install
+cp .env.example .env.local   # fill in EXPO_PUBLIC_SUPABASE_ANON_KEY
+npm run start
+```
 
-A few resources to get you started if this is your first Flutter project:
+Point `EXPO_PUBLIC_SUPABASE_URL` at a local `supabase start` stack (the
+`.env.example` default) or a hosted project.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Layout
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- `app/` — Expo Router routes. Thin: each route wires a feature's screen
+  component to navigation, nothing else.
+- `src/design/` — tokens (`tokens.ts`), the light/dark hook (`useTheme.ts`),
+  and the shared component primitives (`components/`).
+- `src/features/<feature>/{data,domain,ui}` — one folder per feature.
+  `domain/` holds wire-format types and German enum values shared with the
+  backend; `data/` holds Supabase repositories and Zustand stores; `ui/`
+  holds screens and step components.
+- `src/lib/` — the Supabase client and env config.
+- `src/state/` — cross-feature state (session bootstrap).
+
+## Scripts
+
+- `npm run start` — Metro/Expo dev server.
+- `npm run lint` — ESLint (`eslint-config-expo`).
+- `npx tsc --noEmit` — type-check.
