@@ -23,7 +23,9 @@
 
 create table hund (
   id uuid primary key default gen_random_uuid(),
-  besitzer uuid not null references auth.users(id) on delete cascade,
+  -- default auth.uid(): der Client muss besitzer nicht selbst mitschicken;
+  -- die RLS-Policy unten verhindert ohnehin jeden anderen Wert.
+  besitzer uuid not null default auth.uid() references auth.users(id) on delete cascade,
   name text not null,
   geburtsdatum date not null,
   einzugsdatum date not null,
@@ -58,7 +60,7 @@ create policy "eigene hunde" on hund
 
 create table haushalt (
   id uuid primary key default gen_random_uuid(),
-  besitzer uuid not null unique references auth.users(id) on delete cascade,
+  besitzer uuid not null default auth.uid() unique references auth.users(id) on delete cascade,
   plz text,
   wohnsituation text not null
     check (wohnsituation in ('wohnung', 'haus_garten')),
