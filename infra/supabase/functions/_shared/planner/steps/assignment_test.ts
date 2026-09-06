@@ -204,6 +204,42 @@ Deno.test('minEmptySlots is respected even if enough candidates remain', () => {
   assertEquals(result.map((r) => r.activityId), ['a', 'b', null]);
 });
 
+Deno.test('day 1 never gets a rest activity, even if it scores best', () => {
+  const dates = weekFrom(new Date(2026, 2, 2), 2);
+  const days = dates.map((d) => day(d));
+  const pool = [
+    scored(activity({ id: 'rest-best', type: 'rest' }), 5),
+    scored(activity({ id: 'enrichment-second', type: 'enrichment' }), 4),
+  ];
+
+  const result = assignToDays({ days, pool, config: looseConfig });
+
+  assertEquals(result[0]!.activityId, 'enrichment-second');
+});
+
+Deno.test('day 1 falls back to rest rather than staying empty if rest is the only fit', () => {
+  const days = [day(new Date(2026, 2, 2))];
+  const pool = [scored(activity({ id: 'only-rest', type: 'rest' }), 1)];
+
+  const result = assignToDays({ days, pool, config: looseConfig });
+
+  assertEquals(result[0]!.activityId, 'only-rest');
+});
+
+Deno.test('the day-1 rest exclusion does not apply to later days', () => {
+  const dates = weekFrom(new Date(2026, 2, 2), 2);
+  const days = dates.map((d) => day(d));
+  const pool = [
+    scored(activity({ id: 'enrichment-day1' }), 5),
+    scored(activity({ id: 'rest-day2', type: 'rest' }), 4),
+  ];
+
+  const result = assignToDays({ days, pool, config: looseConfig });
+
+  assertEquals(result[0]!.activityId, 'enrichment-day1');
+  assertEquals(result[1]!.activityId, 'rest-day2');
+});
+
 Deno.test('each activity is used at most once per period', () => {
   const dates = weekFrom(new Date(2026, 2, 2), 2);
   const days = dates.map((d) => day(d));

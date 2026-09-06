@@ -373,7 +373,7 @@ letzte ist der Fall, in dem eine App normalerweise unangenehm wird.
 |---|---|
 | V1.1 | Wetterprognose über PLZ (Open-Meteo oder offene DWD-Daten, Lizenz prüfen) |
 | V1.1 | Saison- und Regionalwissen ohne API: Dunkelheit im Herbst, Brut- und Setzzeit März–Juli, Streusalz, Grannen, Zecken |
-| V1.2 | LLM-Übersetzer für den Freitext → `wochenkontext` |
+| V1.2 | LLM-Übersetzer für den Freitext → `weeklyContext` |
 | V1.2 | „Ich hab noch Zeit" — Zusatzvorschlag auf Abruf |
 | V2 | Add-on-Module, die sich in den Plan einweben; Silvester als Saisongeschäft |
 | V2 | Erwachsenen- und Seniorenpool; Wiedereinstiegspunkte Pubertät, Zweithund, Umzug, Schonzeit |

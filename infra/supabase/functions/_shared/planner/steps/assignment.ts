@@ -48,43 +48,59 @@ export function assignToDays(args: {
   let trainingCount = 0;
   let previousArousal = 0;
 
-  for (const day of days) {
+  const findCandidate = (day: PeriodDay, dayIndex: number, excludeRest: boolean) => {
+    for (const candidate of pool) {
+      const activity = candidate.activity;
+      if (usedActivityIds.has(activity.id)) continue;
+
+      // Day 1 of the period is never a deliberately quiet day — a brand
+      // new plan (or any period's opening day) needs to visibly do
+      // something, not open with "rest" (docs/specs/zuweisen.md, "Tag 1
+      // ist nie ein Ruhetag"). Only a preference, not absolute: the
+      // caller retries without it if nothing else fits at all, so a
+      // genuinely empty day 1 never wins over a rest day that does fit.
+      if (dayIndex === 0 && excludeRest && activity.type === 'rest') continue;
+
+      if (activity.type === 'training') {
+        if (!day.isTrainingDay) continue;
+        if (trainingCount >= config.maxTrainingSlots) continue;
+      }
+
+      if (activity.durationMin > day.timeBudgetMinutes) continue;
+
+      const isDemanding = activity.arousal >= config.heavyArousalThreshold;
+      if (isDemanding && hasShortDay && day.timeBudgetMinutes === shortestBudget) {
+        continue;
+      }
+
+      if (
+        previousArousal >= config.heavyArousalThreshold &&
+        activity.type !== 'rest' &&
+        activity.type !== 'enrichment'
+      ) {
+        continue;
+      }
+
+      if (
+        previousArousal >= config.maxArousalThreshold &&
+        activity.arousal >= config.maxArousalThreshold
+      ) {
+        continue;
+      }
+
+      return candidate;
+    }
+    return undefined;
+  };
+
+  for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
+    const day = days[dayIndex]!;
     let chosen: ScoredActivity | undefined;
 
     if (activeCount < assignableCap) {
-      for (const candidate of pool) {
-        const activity = candidate.activity;
-        if (usedActivityIds.has(activity.id)) continue;
-
-        if (activity.type === 'training') {
-          if (!day.isTrainingDay) continue;
-          if (trainingCount >= config.maxTrainingSlots) continue;
-        }
-
-        if (activity.durationMin > day.timeBudgetMinutes) continue;
-
-        const isDemanding = activity.arousal >= config.heavyArousalThreshold;
-        if (isDemanding && hasShortDay && day.timeBudgetMinutes === shortestBudget) {
-          continue;
-        }
-
-        if (
-          previousArousal >= config.heavyArousalThreshold &&
-          activity.type !== 'rest' &&
-          activity.type !== 'enrichment'
-        ) {
-          continue;
-        }
-
-        if (
-          previousArousal >= config.maxArousalThreshold &&
-          activity.arousal >= config.maxArousalThreshold
-        ) {
-          continue;
-        }
-
-        chosen = candidate;
-        break;
+      chosen = findCandidate(day, dayIndex, true);
+      if (chosen === undefined && dayIndex === 0) {
+        chosen = findCandidate(day, dayIndex, false);
       }
     }
 

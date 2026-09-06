@@ -1,11 +1,11 @@
 -- 0003_rasse.sql
 --
 -- Pulls the breed-specific paths flagged "not in MVP" in docs/produkt.md
--- forward (owner's decision, see docs/specs/rasse-modellieren.md):
--- `dog.breed_group` becomes a property of its own `breed` table, and a dog
--- links to one or more breeds via `dog_breed`. That makes the path to real,
--- individually named breeds (instead of just nine groups) later a matter of
--- pure data entry, no further schema change.
+-- forward (owner's decision, see docs/specs/rasse-modellieren.md): breed
+-- group is a property of its own `breed` table, not a plain column on
+-- `dog`, and a dog links to one or more breeds via `dog_breed`. That makes
+-- the path to real, individually named breeds (instead of just nine
+-- groups) later a matter of pure data entry, no further schema change.
 --
 -- `size_class`/`body_type` deliberately stay on `dog`: they're already
 -- given by the owner independent of breed group today, so they're
@@ -62,8 +62,6 @@ create policy "own dog_breed" on dog_breed
 create index dog_breed_dog_id_idx on dog_breed(dog_id);
 
 -- ── dog ─────────────────────────────────────────────────────────────────────
-
-alter table dog drop column breed_group;
 
 -- Both nullable: "unknown" is a legitimate state, especially for shelter
 -- dogs without papers.

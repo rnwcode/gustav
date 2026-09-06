@@ -72,6 +72,17 @@ die **alle** zutreffenden Regeln erfüllt:
 6. **Nie zwei harte Tage in Folge**: war der Vortag belegt mit
    `arousal ≥ maxArousalThreshold`, darf die heutige Aktivität nicht
    ebenfalls `arousal ≥ maxArousalThreshold` haben.
+7. **Tag 1 ist nie ein Ruhetag — außer es gibt wirklich nichts anderes**:
+   für den ersten Tag der Periode (Index 0) scheidet `type === 'rest'`
+   zunächst aus, unabhängig vom Score. Eine neue Periode (erst recht die
+   allererste, direkt nach dem Onboarding) soll sichtbar mit etwas
+   beginnen, nicht mit „heute ist nichts". Das ist eine Präferenz, keine
+   absolute Regel: Findet sich unter Ausschluss von `rest` **gar kein**
+   Kandidat für Tag 1 (z. B. weil Tag 1 kein Trainingstag ist und alles
+   andere im Pool `training` ist), wird ein zweiter Durchlauf ohne den
+   Ausschluss versucht — ein passender Ruhetag schlägt einen leeren Tag 1
+   immer noch. Gilt nur für Tag 1; ab Tag 2 ist `rest` von Anfang an ein
+   normaler Kandidat.
 
 Findet sich keine passende Aktivität (oder ist `assignableCap` erreicht),
 bleibt der Tag leer. Ein leerer Tag setzt die Belastung des Vortags für
@@ -153,6 +164,15 @@ die eigentlich geprüfte Regel gar nicht mehr zeigen können.
    Pool enthält nur eine Aktivität. Zwei Tage stehen offen. Ausgabe: Der
    erste Tag bekommt sie, der zweite bleibt leer — die Aktivität wird
    nicht am zweiten Tag wiederholt.
+
+10. **Tag 1 ist nie ein Ruhetag, außer nichts anderes passt.** (`minEmptySlots: 0`)
+    Pool: `[(rest-best, rest, 1, 10), (enrichment-second, enrichment, 1,
+    10)]`, `rest-best` bewertet höher. Ausgabe: Tag 1 bekommt
+    `enrichment-second`, obwohl `rest-best` besser bewertet war — die
+    Regel schlägt den Score. Enthält der Pool dagegen **nur**
+    `rest-best`, bekommt Tag 1 trotzdem `rest-best` — ein passender
+    Ruhetag ist besser als ein leerer Tag 1. Ab Tag 2 gilt die
+    Bevorzugung nicht mehr, `rest` ist von Anfang an zulässig.
 
 ## Nicht dazu gehört
 
