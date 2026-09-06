@@ -8,6 +8,12 @@ Reproduzierbare Ausgangszustände für lokale Entwicklung und Staging.
 - `skill.sql` — 20 Skills.
 - `aktivitaet.sql` — 100 Aktivitäten (referenziert `skill.id` per
   Fremdschlüssel — **erst `skill.sql`, dann `aktivitaet.sql`** ausführen).
+- `planer_konfig.sql` — der komplette Inhalt von `content/planer.yaml`,
+  YAML-zu-JSON geparst, als eine Zeile (`version = 1`). Siehe
+  `docs/specs/planer-konfig-aus-db.md` für den Hintergrund: `generate-plan`
+  liest diese Tabelle statt der Datei. Eine neue `content/planer.yaml`-Version
+  bekommt eine zusätzliche Zeile hier, von Hand erzeugt — kein Importskript
+  (CLAUDE.md, Regel 5).
 - `entwicklung.sql` — noch nicht angelegt. Geplant: ein Testnutzer mit drei
   Hunden in verschiedenen Lebensphasen (Welpe 11 Wochen, Junghund in der
   Pubertät, erwachsen mit allem gefestigt).
@@ -21,16 +27,19 @@ Ausführen dupliziert nichts.
 
 ## Ausführen
 
-Dieses Repo hat noch kein `infra/supabase/config.toml` (nie
-`supabase init` gelaufen) — die Dateien hier laufen deshalb **nicht**
-automatisch bei `supabase db reset`. Bis das nachgeholt ist
-(`[db.seed] sql_paths = ["./seed/*.sql"]` in einer künftigen
-`config.toml`), von Hand ausführen:
+`infra/supabase/config.toml` trägt unter `[db.seed] sql_paths` eine
+explizite, geordnete Liste aller Dateien hier — `supabase db reset` (und
+`supabase start` beim ersten Hochfahren) seedet damit lokal automatisch,
+in genau dieser Reihenfolge (`rasse.sql`, `skill.sql`, `aktivitaet.sql`,
+`planer_konfig.sql`).
+
+Gegen die gehostete Instanz läuft kein automatischer Reset — dort von Hand:
 
 ```sh
 psql "$LOCAL_SUPABASE_DB_URL" -f infra/supabase/seed/rasse.sql
 psql "$LOCAL_SUPABASE_DB_URL" -f infra/supabase/seed/skill.sql
 psql "$LOCAL_SUPABASE_DB_URL" -f infra/supabase/seed/aktivitaet.sql
+psql "$LOCAL_SUPABASE_DB_URL" -f infra/supabase/seed/planer_konfig.sql
 ```
 
 Oder Inhalt einer Datei in Supabase Studios SQL Editor einfügen und

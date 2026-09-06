@@ -69,7 +69,7 @@ enabled = true
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
 # Reihenfolge ist bewusst explizit (kein Glob): aktivitaet.sql referenziert
 # skill.id per Fremdschluessel und muss danach laufen (siehe seed/README.md).
-sql_paths = ["./seed/rasse.sql", "./seed/skill.sql", "./seed/aktivitaet.sql"]
+sql_paths = ["./seed/rasse.sql", "./seed/skill.sql", "./seed/aktivitaet.sql", "./seed/planer_konfig.sql"]
 
 [db.network_restrictions]
 # Enable management of network restrictions.
