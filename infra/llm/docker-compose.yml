@@ -1,0 +1,19 @@
+# Local LLM service for generate-day-text (docs/specs/tagestext.md).
+#
+# Ollama serves an OpenAI-compatible chat-completions endpoint natively —
+# the same interface generate-day-text's HttpLlmClient (_shared/llm/client.ts)
+# will speak against a later, externally hosted service. Swapping the two is
+# a change to LLM_BASE_URL, not to this file or to the function's code.
+#
+# Start: docker compose -f infra/llm/docker-compose.yml up -d
+# Pull a model once: docker compose -f infra/llm/docker-compose.yml exec ollama ollama pull llama3.2
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+
+volumes:
+  ollama_models:

@@ -226,7 +226,9 @@ export function toDateString(date: Date): string {
  */
 export function activityFromRow(row: unknown): Activity {
   const r = row as Record<string, unknown> & { activity_text: readonly Record<string, unknown>[] };
-  const text = r.activity_text[0];
+  // activity_text!inner(*) with .eq('activity_text.locale', 'de') (index.ts)
+  // guarantees exactly one row.
+  const text = r.activity_text[0]!;
   const needs = r.needs as Activity['needs'];
   const suitability = new Map<BreedGroup, number>();
   for (const [key, value] of Object.entries(r.suitability as Record<string, number>)) {
@@ -270,7 +272,9 @@ export function activityFromRow(row: unknown): Activity {
 
 export function skillFromRow(row: unknown): Skill {
   const r = row as Record<string, unknown> & { skill_text: readonly Record<string, unknown>[] };
-  const text = r.skill_text[0];
+  // skill_text!inner(*) with .eq('skill_text.locale', 'de') (index.ts)
+  // guarantees exactly one row.
+  const text = r.skill_text[0]!;
   const targetLevels = r.target_levels as Skill['targetLevels'];
   return {
     id: r.id as string,

@@ -329,9 +329,20 @@ ungeseedeten Zufallszahlen, kein LLM. Alle Parameter kommen aus
    sonst: schwächsten Slot tauschen, ab Schritt 6 wiederholen (max 1 Durchlauf)
 
 8  Texten
-   Rahmen und Begründung je Slot aus strukturierten Daten
-   Template im MVP, LLM später — die Auswahl steht da längst fest
+   Begründung (`reason`) je Slot aus strukturierten Daten — reine Funktion,
+   kein LLM, keine Prosa (docs/specs/texten.md)
 ```
+
+**Der Rahmentext ist kein neunter Schritt des Planers.** Er entsteht separat
+und tagesaktuell, nicht bei der Planerzeugung: `generate-day-text`
+(`docs/specs/tagestext.md`) liest die hier feststehende `reason` plus fällige
+`reminder`-Zeilen (Impftermin, Wiegen) und lässt ein LLM daraus den Satz für
+genau diesen Tag schreiben, beim Öffnen in der App. Anders als der Plan
+selbst ist dieser Text **nicht** Teil der Reproduzierbarkeitsgarantie unten —
+er darf sich bei erneuter Generierung ändern, nur die Daten dahinter
+(`slot`, `reminder`) bleiben nachvollziehbar. Ohne Netz oder vor der ersten
+Generierung zeigt die App stattdessen den Template-Text aus `reason` +
+`Activity.sentence` (`docs/specs/texten.md`).
 
 **Täglich, nicht periodisch:** Prognosen über sieben Tage sind unzuverlässig.
 Ein leichter Tageslauf passt den Rahmen an, ohne den Plan umzuwerfen: bei
@@ -373,7 +384,7 @@ letzte ist der Fall, in dem eine App normalerweise unangenehm wird.
 |---|---|
 | V1.1 | Wetterprognose über PLZ (Open-Meteo oder offene DWD-Daten, Lizenz prüfen) |
 | V1.1 | Saison- und Regionalwissen ohne API: Dunkelheit im Herbst, Brut- und Setzzeit März–Juli, Streusalz, Grannen, Zecken |
-| V1.2 | LLM-Übersetzer für den Freitext → `weeklyContext` |
+| V1.2 | LLM-Übersetzer für den Check-in-Freitext → `weeklyContext` (`checkin_translator.ts` bleibt Template) — nicht zu verwechseln mit dem bereits gebauten Tagestext, `docs/specs/tagestext.md` |
 | V1.2 | „Ich hab noch Zeit" — Zusatzvorschlag auf Abruf |
 | V2 | Add-on-Module, die sich in den Plan einweben; Silvester als Saisongeschäft |
 | V2 | Erwachsenen- und Seniorenpool; Wiedereinstiegspunkte Pubertät, Zweithund, Umzug, Schonzeit |
