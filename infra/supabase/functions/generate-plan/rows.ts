@@ -1,7 +1,11 @@
+import type { Activity } from '../_shared/planner/models/activity.ts';
 import type { Dog } from '../_shared/planner/models/dog.ts';
 import type { Household } from '../_shared/planner/models/household.ts';
+import type { Skill } from '../_shared/planner/models/skill.ts';
 import type { HistoryEntry, SkillState } from '../_shared/planner/models/skill_state.ts';
 import type { Slot } from '../_shared/planner/models/weekly_plan.ts';
+import { parseActivityYaml } from '../_shared/content/activity_yaml.ts';
+import { parseSkillYaml } from '../_shared/content/skill_yaml.ts';
 import {
   bodyTypeFromGerman,
   breedGroupFromGerman,
@@ -172,4 +176,19 @@ export function slotRowFromSlot(wochenplanId: string, slot: Slot) {
 
 export function toDateString(date: Date): string {
   return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Maps an `aktivitaet`/`skill` row (`infra/supabase/migrations/0002_content.sql`)
+ * onto `Activity`/`Skill`. The tables mirror `content/schema/{aktivitaet,skill}.yaml`
+ * field for field — the same shape a YAML-parsed content document has — so
+ * a row read back from Postgres runs through the very same translator the
+ * content loader uses, no separate DB-only mapping logic needed.
+ */
+export function activityFromRow(row: unknown): Activity {
+  return parseActivityYaml(row);
+}
+
+export function skillFromRow(row: unknown): Skill {
+  return parseSkillYaml(row);
 }

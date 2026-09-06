@@ -47,21 +47,21 @@ DB error.
   matching `docs/datenmodell.md`'s "open-ended, translator- produced" description — though no
   planner step reads `flags` yet either, so today this only affects what gets stored, not the plan.
 
-## Two temporary shims — read before deploying for real
+## One temporary shim — read before deploying for real
 
-Both are called out where they happen in `index.ts`, repeated here because they matter for anyone
-building on this:
+Called out where it happens in `index.ts`, repeated here because it matters for anyone building on
+this:
 
-1. **Catalog**: skills/activities come from `_shared/planner/fixtures/`
-   (`FIXTURE_SKILLS`/`FIXTURE_ACTIVITIES`), not `content/` or a DB table — the real forty-activity
-   catalog doesn't exist yet (trainer work, see `_shared/planner/fixtures/README.md`), and there's
-   no content migration yet either (`infra/supabase/migrations/0001_init.sql`'s own header comment
-   scopes it out). Swap this import for a DB read once both exist; nothing else changes.
-2. **Config**: `content/planer.yaml` is read from disk via the existing loader. That works under
-   `supabase functions serve` (runs from the checkout, real filesystem) but **not** after
-   `supabase functions deploy` — a deployed function's bundle doesn't include `content/`. Move this
-   to a DB-backed config table before a real deploy; it's the same missing content migration as
-   above.
+**Config**: `content/planer.yaml` is read from disk via the existing loader. That works under
+`supabase functions serve` (runs from the checkout, real filesystem) but **not** after
+`supabase functions deploy` — a deployed function's bundle doesn't include `content/`. Move this to
+a DB-backed config table before a real deploy (`docs/specs/content-aus-db-laden.md`, "Nicht dazu
+gehört" — a separate piece of work from the `aktivitaet`/`skill` catalog tables that already exist).
+
+Skills/activities themselves come from the `aktivitaet`/`skill` tables
+(`infra/supabase/migrations/0002_content.sql`), maintained directly there (Supabase Studio/SQL,
+CLAUDE.md rule 5) — no import step from files. `_shared/planner/fixtures/` still exists, but only
+the simulator and tests use it now.
 
 ## Testing
 

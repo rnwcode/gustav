@@ -2,7 +2,8 @@
 #
 # Gedachter Ablauf:
 #   1. supabase link auf das Staging-Projekt, db push, Smoke-Test
-#   2. tool/seed.dart für den Content
+#   2. Content (aktivitaet/skill) wird direkt in der DB gepflegt, nicht
+#      hier importiert (CLAUDE.md, Regel 5)
 #   3. nach manueller Freigabe dasselbe gegen Produktion
 #
 # Zugangsdaten aus den Repository-Secrets: SUPABASE_ACCESS_TOKEN,

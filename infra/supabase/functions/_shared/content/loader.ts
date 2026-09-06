@@ -9,10 +9,12 @@ import { parsePlanerConfigYaml, parseStateMachineConfigYaml } from './planer_yam
 
 /**
  * Reads and YAML-parses every `*.yaml` file directly inside `dir`. Local
- * tooling only (the simulator, a future seed script) — never called from
+ * tooling only (the simulator, this loader's own tests) — never called from
  * inside `_shared/planner/`, which stays free of IO (CLAUDE.md, rule 1).
- * A deployed Edge Function reads the seeded catalog from Postgres instead
- * (CLAUDE.md, rule 10), not from these files.
+ * The deployed Edge Function reads `aktivitaet`/`skill` straight from
+ * Postgres instead (CLAUDE.md, rule 5) — these files are the simulator's
+ * synthetic catalog and a drift check for `content/schema/`, not a source
+ * the production catalog is imported from.
  */
 async function readYamlDocuments(dir: string | URL): Promise<unknown[]> {
   const docs: unknown[] = [];

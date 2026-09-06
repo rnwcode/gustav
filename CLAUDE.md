@@ -51,9 +51,15 @@ an dieser Architekturgrenze ändert er nichts.
    `apps/gustav/src/design/` — jeder Screen bezieht Farbe/Typografie/
    Abstand von dort, nie als Literal im Screen-Code.
 
-5. Content ist Daten, nie Code. Übungen und Skills leben als YAML in
-   `content/`, werden validiert und geseedet — niemals als Literale im
-   Code der Edge Functions.
+5. Content ist Daten, nie Code. Übungen und Skills leben in den Tabellen
+   `aktivitaet`/`skill` (`infra/supabase/migrations/0002_content.sql`) und
+   werden dort direkt gepflegt (Supabase Studio/SQL) — niemals als Literale
+   im Code der Edge Functions. Kein Import-Schritt aus Dateien: die DB ist
+   die Quelle der Wahrheit, nicht ein Build-Artefakt daraus. `content/`
+   (YAML, `content/schema/`) dokumentiert weiterhin die erwartete Form und
+   dient dem Simulator/Tests als synthetischer Katalog — ein Seed aus
+   Dateien in die Produktions-DB kann später zurückkommen, ist aber bewusst
+   kein Ziel gerade jetzt.
 
 6. Änderungen an `infra/supabase/functions/` nur, wenn danach `deno test` UND
    der Simulator (`--check`) grün sind. Die Gewichte in
@@ -109,10 +115,9 @@ Native (`apps/`) — beide Laufzeiten sprechen nur über die in
 `docs/datenmodell.md` beschriebenen Datenstrukturen miteinander, nie über
 geteilten Code.
 
-**Nur der Content selbst bleibt Deutsch:** die YAML-Dateien in `content/`
-(Skills, Aktivitäten, `planer.yaml`) und alle nutzersichtbaren Texte in der
-App. Das ist Fachvokabular für Hundetrainerinnen und Nutzer, keine
-Entwicklungssprache.
+**Nur der Content selbst bleibt Deutsch:** die Werte in `aktivitaet`/`skill`,
+`content/planer.yaml` und alle nutzersichtbaren Texte in der App. Das ist
+Fachvokabular für Hundetrainerinnen und Nutzer, keine Entwicklungssprache.
 
 `docs/` (Produkt- und Prozessdokumentation, inklusive `docs/specs/`) bleibt
 ebenfalls Deutsch — das sind Texte für Menschen im Projekt, kein Code.

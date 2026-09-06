@@ -2,15 +2,15 @@
 // (and once, right after onboarding, with an empty check-in) to get a new
 // WeeklyPlan for one dog.
 //
-// ── Katalog: Fixtures statt Content ─────────────────────────────────────────
+// ── Katalog: aktivitaet/skill (Postgres) ────────────────────────────────────
 //
-// Skills/Aktivitäten kommen aus infra/supabase/functions/_shared/planner/
-// fixtures/ (FIXTURE_SKILLS, FIXTURE_ACTIVITIES), nicht aus content/ oder
-// einer DB-Tabelle: Die echten vierzig Aktivitäten sind noch nicht
-// geschrieben (Trainerarbeit, siehe fixtures/README.md), und es gibt noch
-// keine Content-Migration (infra/supabase/migrations/0001_init.sql, Kopf-
-// kommentar). Sobald beides existiert, ersetzt ein DB-Read diesen Import —
-// nichts an plan() selbst ändert sich dabei.
+// Skills/Aktivitäten kommen aus den Tabellen `aktivitaet`/`skill`
+// (infra/supabase/migrations/0002_content.sql, geseedet per
+// `tool/seed_content.ts` aus content/) — nicht mehr aus
+// `_shared/planner/fixtures/`, die weiterhin nur Simulator und Tests
+// bedienen (docs/specs/content-aus-db-laden.md). Die 40 echten Aktivitäten
+// selbst sind noch Trainerarbeit (siehe fixtures/README.md); geseedet ist
+// bislang nur, was in content/ tatsächlich liegt.
 //
 // ── Konfiguration: Datei statt DB, vorerst ──────────────────────────────────
 //
@@ -27,13 +27,13 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { FakeClock, systemClock } from '../_shared/planner/clock.ts';
 import type { Clock } from '../_shared/planner/clock.ts';
 import { plan } from '../_shared/planner/plan.ts';
-import { FIXTURE_ACTIVITIES } from '../_shared/planner/fixtures/activities.ts';
-import { FIXTURE_SKILLS } from '../_shared/planner/fixtures/skills.ts';
 import { loadPlannerConfig, loadStateMachineConfig } from '../_shared/content/loader.ts';
 import { germanForWeekday, germanForWeeklyContextSource } from '../_shared/content/german_enums.ts';
 import {
+  activityFromRow,
   dogFromRow,
   householdFromRow,
+  skillFromRow,
   skillStandRowFromState,
   skillStateFromRow,
   slotRowFromSlot,
@@ -176,10 +176,30 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // Öffentlich lesbarer Content (RLS: "aktivitaet/skill ist oeffentlich
+  // lesbar") — kein Bezug zu body.hundId nötig.
+  const { data: skillRows, error: skillCatalogError } = await supabase.from('skill').select('*');
+  if (skillCatalogError) {
+    return jsonResponse(
+      { error: 'skill_catalog_query_failed', detail: skillCatalogError.message },
+      500,
+    );
+  }
+  const { data: activityRows, error: activityCatalogError } = await supabase.from('aktivitaet')
+    .select('*');
+  if (activityCatalogError) {
+    return jsonResponse(
+      { error: 'activity_catalog_query_failed', detail: activityCatalogError.message },
+      500,
+    );
+  }
+
   const dog = dogFromRow(hundRow);
   const household = householdFromRow(haushaltRow);
-  const activityById = new Map(FIXTURE_ACTIVITIES.map((a) => [a.id, a]));
-  const skillById = new Map(FIXTURE_SKILLS.map((s) => [s.id, s]));
+  const activityCatalog = (activityRows ?? []).map(activityFromRow);
+  const skillCatalog = (skillRows ?? []).map(skillFromRow);
+  const activityById = new Map(activityCatalog.map((a) => [a.id, a]));
+  const skillById = new Map(skillCatalog.map((s) => [s.id, s]));
 
   const skillStates = new Map(
     (skillStandRows ?? []).map((
@@ -252,8 +272,8 @@ Deno.serve(async (req: Request) => {
     today,
     loadOverLastSevenDays,
     skillStates: updatedSkillStates,
-    skillCatalog: FIXTURE_SKILLS,
-    activityCatalog: FIXTURE_ACTIVITIES,
+    skillCatalog,
+    activityCatalog,
     needCoverageLastPeriod,
     lastUsedByVarianceGroup,
     lastUsedByActivityId,
@@ -319,7 +339,6 @@ Deno.serve(async (req: Request) => {
     slots: result.slots.map((slot) => ({
       datum: toDateString(slot.date),
       aktivitaetId: slot.activityId,
-      // Aus dem Fixture-Katalog, nicht aus content/ — siehe Kopfkommentar.
       titel: slot.activityId === null ? null : activityById.get(slot.activityId)?.title ?? null,
       satz: slot.activityId === null ? null : activityById.get(slot.activityId)?.sentence ?? null,
       begruendung: slot.reason,
