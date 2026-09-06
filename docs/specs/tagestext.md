@@ -85,10 +85,20 @@ wenn `slot.day_text` noch `null` ist. Ist bereits ein Text vorhanden, wird
 er nicht automatisch neu erzeugt (Kosten, Nichtdeterminismus begrenzen) —
 ein manuelles "neu generieren" wäre ein späteres, eigenes Feature.
 
-**Lokale Infrastruktur**: ein Ollama-Container (`docker-compose.yml` neben
-`infra/supabase/`), dokumentiert mit Startbefehl. `generate-day-text`
-braucht nur eine erreichbare `LLM_BASE_URL` — ob das lokal der
-Docker-Container oder später ein Remote-Dienst ist, ändert am Code nichts.
+**Lokale Infrastruktur** (`infra/llm/`): ein in sich geschlossener
+Ollama-Container, Modell beim Image-Build eingebacken (kein separater
+`ollama pull`). `generate-day-text` braucht nur eine erreichbare
+`LLM_BASE_URL` — ob das lokal der Docker-Container oder später ein
+Remote-Dienst ist, ändert am Code nichts.
+
+**Absicherung**: Ollama prüft nie selbst einen Schlüssel. Deshalb ist es in
+`infra/llm/docker-compose.yml` nie direkt erreichbar (`expose:`, kein
+`ports:`) — ein Auth-Proxy (Caddy, `infra/llm/Caddyfile`) davor lässt nur
+Anfragen mit passendem `Authorization: Bearer $LLM_API_KEY` durch, alles
+andere bekommt `401`, bevor Ollama die Anfrage je sieht. Dieselbe Aufteilung
+bleibt gültig, sobald der Dienst extern gehostet wird — nur die Adresse im
+Caddyfile wird eine echte Domain (automatisches TLS-Zertifikat über Caddy),
+was noch aussteht, bis ein Hosting-Ort feststeht (siehe „Nicht dazu gehört").
 
 **Systemprompt** (Ausgangspunkt, `_shared/llm/day_text_prompt.ts`):
 
@@ -166,6 +176,9 @@ leicht überarbeiten lässt (z. B. mit einer Hundetrainerin abgestimmt).
   (`slot`, `reminder`) müssen nachvollziehbar bleiben, nicht der Wortlaut.
 - Den heutigen Client-seitigen Template-Text (`docs/specs/texten.md`)
   abzuschaffen — er bleibt als Offline-/Fallback-Pfad bestehen.
+- TLS/eine echte Domain für den Auth-Proxy — sinnvoll erst, sobald ein
+  Hosting-Ort für den externen LLM-Dienst feststeht (siehe „Verhalten",
+  Absicherung).
 
 ## Offene Fragen
 

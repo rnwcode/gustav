@@ -1,0 +1,15 @@
+# Auth proxy in front of Ollama — Ollama itself never checks a key, so
+# nothing may reach it directly (docs/specs/tagestext.md, "wie kann es
+# abgesichert werden"). Only a request whose Authorization header matches
+# LLM_API_KEY gets forwarded; everything else is rejected before it ever
+# reaches the model.
+:11434 {
+	# route {} disables Caddy's automatic directive reordering — without it,
+	# `respond` sorts ahead of `reverse_proxy` and fires unconditionally,
+	# regardless of the header check (caught by a smoke test, see git log).
+	route {
+		@authorized header Authorization "Bearer {$LLM_API_KEY}"
+		reverse_proxy @authorized ollama:11434
+		respond "unauthorized" 401
+	}
+}

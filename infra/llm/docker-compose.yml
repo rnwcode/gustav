@@ -1,19 +1,41 @@
 # Local LLM service for generate-day-text (docs/specs/tagestext.md).
 #
-# Ollama serves an OpenAI-compatible chat-completions endpoint natively —
-# the same interface generate-day-text's HttpLlmClient (_shared/llm/client.ts)
-# will speak against a later, externally hosted service. Swapping the two is
-# a change to LLM_BASE_URL, not to this file or to the function's code.
+# Two containers, one exposed port: `ollama` is never reachable from the
+# host directly (no ports:, only `expose:` on the internal compose
+# network) — Ollama has no authentication of its own. `auth-proxy` (Caddy)
+# is the only way in, and only forwards a request whose Authorization
+# header matches LLM_API_KEY (infra/llm/Caddyfile). Same shape works once
+# this moves to an externally hosted server — only the Caddyfile's address
+# changes from ":11434" to a real domain (automatic HTTPS from Caddy then),
+# not the split between the two services.
 #
-# Start: docker compose -f infra/llm/docker-compose.yml up -d
-# Pull a model once: docker compose -f infra/llm/docker-compose.yml exec ollama ollama pull llama3.2
+# The Ollama image itself bakes its model in at build time (Dockerfile) —
+# `docker compose up` alone gives a ready-to-use service, no separate
+# `ollama pull` step.
+#
+# Start: copy .env.example to .env, fill in LLM_API_KEY, then
+#   docker compose -f infra/llm/docker-compose.yml up -d --build
 services:
   ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
+    build:
+      context: .
+      args:
+        MODEL: llama3.2
+    expose:
+      - "11434"
     volumes:
       - ollama_models:/root/.ollama
+
+  auth-proxy:
+    image: caddy:2-alpine
+    depends_on:
+      - ollama
+    ports:
+      - "127.0.0.1:11434:11434"
+    environment:
+      LLM_API_KEY: ${LLM_API_KEY:?set LLM_API_KEY in infra/llm/.env, see .env.example}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
 
 volumes:
   ollama_models:
