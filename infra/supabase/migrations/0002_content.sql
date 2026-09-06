@@ -1,88 +1,125 @@
 -- 0002_content.sql
 --
--- Die Content-Migration, die 0001_init.sql schon ankündigt: skill und
--- aktivitaet, für alle Nutzer identisch (Content, kein Nutzerzustand).
--- Gefüllt wird per `tool/seed_content.ts` aus content/*.yaml — nie von
--- Hand, nie über anon/authenticated (CLAUDE.md, Regel 5 und 10).
+-- The content migration 0001_init.sql already announces: skill and
+-- activity, identical for every user (content, not user state). Filled via
+-- `infra/supabase/seed/{skill,activity}.sql` (`content/import/*.csv`) or by
+-- hand in Supabase Studio — never over anon/authenticated (CLAUDE.md, rules
+-- 5 and 10).
 --
--- Spaltennamen und verschachtelte Struktur (bedarf, eignung, zielstufen,
--- troubleshooting als jsonb) spiegeln content/schema/{aktivitaet,skill}.yaml
--- eins zu eins — eine aus Postgres gelesene Zeile hat exakt die Form eines
--- bereits YAML-geparsten Dokuments und läuft durch denselben Übersetzer
--- (_shared/content/{activity,skill}_yaml.ts über rows.ts,
--- siehe docs/specs/content-aus-db-laden.md).
+-- ── Language ─────────────────────────────────────────────────────────────
 --
--- RLS ist aktiv, aber anders als bei den Zustandstabellen: keine
--- besitzer-Policy, sondern eine einzige „für alle lesbar" — es gibt keine
--- Schreib-Policy für anon/authenticated, also bleibt Schreiben dem
--- Service-Role-Key des Seed-Skripts vorbehalten (der RLS ohnehin umgeht).
+-- Table/column names and structural enum values (`type`, `category`, …) are
+-- English, like the rest of the schema (CLAUDE.md, section Sprache) — only
+-- the actual trainer-authored text (`skill_text`/`activity_text` below,
+-- `content/planer.yaml`, user-visible app text) stays German.
 --
--- Bewusst ohne Fremdschlüssel auf voraussetzungen (Array, referenziert u.
--- U. noch nicht existierende Skills, z. B. rueckruf.yaml → namensauf-
--- merksamkeit) — das prüft der künftige Content-Validator, nicht die DB.
+-- User-visible text columns (`title`, `sentence`, `instructions`,
+-- `success_criterion`, `common_mistakes`, `troubleshooting` on activity;
+-- `name`, `description` on skill) live in their own `*_text` table keyed by
+-- `(id, locale)` instead of on `skill`/`activity` themselves — a second
+-- language later is just more rows, never a schema change. So far there is
+-- only `locale = 'de'`. `generate-plan/index.ts` joins against
+-- `locale = 'de'` when reading; a later locale picker would plug in there.
+--
+-- RLS is active, but unlike the state tables: no owner policy, one single
+-- "readable by everyone" — there is no write policy for anon/authenticated,
+-- so writing stays with the seed script's service-role key (which bypasses
+-- RLS anyway).
+--
+-- Deliberately without a foreign key on prerequisites (array, may reference
+-- a skill that doesn't exist yet) — the future content validator checks
+-- that, not the DB.
 
 -- ── skill ───────────────────────────────────────────────────────────────────
 
 create table skill (
   id text primary key,
-  name text not null,
-  kategorie text not null
-    check (kategorie in (
-      'grundsignal', 'leinenarbeit', 'impulskontrolle',
-      'alltagsroutine', 'sozialverhalten', 'kooperation'
+  category text not null
+    check (category in (
+      'basicCue', 'leashWork', 'impulseControl',
+      'dailyRoutine', 'socialBehavior', 'cooperation'
     )),
-  voraussetzungen text[] not null default '{}',
-  min_alter_wochen int not null default 0 check (min_alter_wochen >= 0),
-  ist_kernskill bool not null default false,
-  zielstufen jsonb not null, -- {dauer, distanz, ablenkung}, je 0–5
-  beschreibung text not null,
-  erstellt_am timestamptz not null default now()
+  prerequisites text[] not null default '{}',
+  min_age_weeks int not null default 0 check (min_age_weeks >= 0),
+  is_core_skill bool not null default false,
+  target_levels jsonb not null, -- {duration, distance, distraction}, each 0-5
+  created_at timestamptz not null default now()
 );
 
 alter table skill enable row level security;
 
-create policy "skill ist oeffentlich lesbar" on skill
+create policy "skill is publicly readable" on skill
   for select using (true);
 
--- ── aktivitaet ──────────────────────────────────────────────────────────────
+create table skill_text (
+  skill_id text not null references skill(id) on delete cascade,
+  locale text not null default 'de',
+  name text not null,
+  description text not null,
 
-create table aktivitaet (
-  id text primary key,
-  titel text not null,
-  satz text not null,
-  typ text not null
-    check (typ in ('training', 'beschaeftigung', 'alltag', 'ruhe', 'pflege')),
-  trainiert_skill text references skill(id), -- null bei Beschäftigung
-  bedarf jsonb not null, -- {koerperlich, kopfarbeit, nase, sozial, erholung}, je 0–3
-  belastung int not null check (belastung between 0 and 3),
-  dauer_min int not null check (dauer_min >= 0),
-  dauer_max int not null check (dauer_max >= dauer_min),
-  ort text not null check (ort in ('drinnen', 'draussen', 'unterwegs', 'egal')),
-  fuer_ablenkung jsonb, -- [min, max] — nur bei typ = training
-  ist_auffrischung bool not null default false,
-  hitzetauglich bool not null default true,
-  regentauglich bool not null default true,
-  dunkeltauglich bool not null default true,
-  gelenkbelastend bool not null default false,
-  saisonfenster jsonb, -- [monat, …] oder null
-  equipment text[] not null default '{}',
-  zweite_person bool not null default false,
-  min_alter_wochen int not null default 0 check (min_alter_wochen >= 0),
-  max_alter_wochen int,
-  eignung jsonb not null default '{}'::jsonb, -- {rassegruppe: gewicht -1…+2}
-  varianzgruppe text not null,
-  sperrfrist_tage int not null default 0 check (sperrfrist_tage >= 0),
-  illustration text,
-  anleitung text[] not null default '{}',
-  erfolgskriterium text not null,
-  haeufige_fehler text[] not null default '{}',
-  troubleshooting jsonb not null default '[]'::jsonb, -- [{problem, antwort}]
-  erstellt_am timestamptz not null default now()
+  primary key (skill_id, locale)
 );
 
-alter table aktivitaet enable row level security;
+alter table skill_text enable row level security;
 
-create policy "aktivitaet ist oeffentlich lesbar" on aktivitaet
+create policy "skill_text is publicly readable" on skill_text
   for select using (true);
 
-create index aktivitaet_trainiert_skill_idx on aktivitaet(trainiert_skill);
+create index skill_text_skill_id_idx on skill_text(skill_id);
+
+-- ── activity ────────────────────────────────────────────────────────────────
+
+create table activity (
+  id text primary key,
+  type text not null
+    check (type in ('training', 'enrichment', 'everyday', 'rest', 'care')),
+  trains_skill text references skill(id), -- null for enrichment
+  needs jsonb not null, -- {physical, mentalWork, scent, social, recovery}, each 0-3
+  arousal int not null check (arousal between 0 and 3),
+  duration_min int not null check (duration_min >= 0),
+  duration_max int not null check (duration_max >= duration_min),
+  location text not null check (location in ('indoors', 'outdoors', 'onTheGo', 'any')),
+  for_distraction jsonb, -- [min, max] — only when type = training
+  is_refresher bool not null default false,
+  heat_suitable bool not null default true,
+  rain_suitable bool not null default true,
+  darkness_suitable bool not null default true,
+  joint_straining bool not null default false,
+  seasonal_window jsonb, -- [month, …] or null
+  equipment text[] not null default '{}',
+  second_person bool not null default false,
+  min_age_weeks int not null default 0 check (min_age_weeks >= 0),
+  max_age_weeks int,
+  suitability jsonb not null default '{}'::jsonb, -- {breedGroup: weight -1…+2}
+  variance_group text not null,
+  cooldown_days int not null default 0 check (cooldown_days >= 0),
+  illustration text,
+  created_at timestamptz not null default now()
+);
+
+alter table activity enable row level security;
+
+create policy "activity is publicly readable" on activity
+  for select using (true);
+
+create index activity_trains_skill_idx on activity(trains_skill);
+
+create table activity_text (
+  activity_id text not null references activity(id) on delete cascade,
+  locale text not null default 'de',
+  title text not null,
+  sentence text not null,
+  instructions text[] not null default '{}',
+  success_criterion text not null,
+  common_mistakes text[] not null default '{}',
+  troubleshooting jsonb not null default '[]'::jsonb, -- [{problem, answer}]
+
+  primary key (activity_id, locale)
+);
+
+alter table activity_text enable row level security;
+
+create policy "activity_text is publicly readable" on activity_text
+  for select using (true);
+
+create index activity_text_activity_id_idx on activity_text(activity_id);

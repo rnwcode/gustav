@@ -7,15 +7,15 @@ import { usePlanStore } from '../data/planStore';
 import type { SlotResult } from '../domain/weeklyPlan';
 
 const RATING_OPTIONS: { value: SlotResult; label: string }[] = [
-  { value: 'klappte', label: 'Klappte' },
-  { value: 'so_halb', label: 'So halb' },
-  { value: 'noch_nicht', label: 'Noch nicht' },
+  { value: 'succeeded', label: 'Klappte' },
+  { value: 'partial', label: 'So halb' },
+  { value: 'notYet', label: 'Noch nicht' },
 ];
 
 const RATED_LABEL: Partial<Record<SlotResult, string>> = {
-  klappte: 'Klappte',
-  so_halb: 'So halb',
-  noch_nicht: 'Noch nicht',
+  succeeded: 'Klappte',
+  partial: 'So halb',
+  notYet: 'Noch nicht',
 };
 
 type Props = { slotId: string };
@@ -36,7 +36,7 @@ export function ExerciseScreen({ slotId }: Props) {
     );
   }
 
-  const isRated = slot.result !== null && slot.result !== 'uebersprungen';
+  const isRated = slot.result !== null && slot.result !== 'skipped';
 
   return (
     <Screen>

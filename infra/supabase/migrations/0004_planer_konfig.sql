@@ -1,33 +1,32 @@
 -- 0004_planer_konfig.sql
 --
--- Schliesst den zweiten, in generate-plan/README.md ("Ein temporaerer
--- Shim") und docs/specs/content-aus-db-laden.md ("Nicht dazu gehoert")
--- bereits angekuendigten Shim: `content/planer.yaml` wurde per
--- Deno.readTextFile gelesen -- funktioniert unter `supabase functions
--- serve` (echter Dateisystemzugriff aus dem Checkout), aber NICHT nach
--- einem echten `supabase functions deploy` (das Bundle enthaelt kein
--- content/). Genau das hat einen echten, live beobachteten 500er
--- verursacht (NotFound: /var/content/planer.yaml).
+-- Closes the second shim already announced in generate-plan/README.md
+-- ("Ein temporaerer Shim") and docs/specs/content-aus-db-laden.md ("Nicht
+-- dazu gehoert"): `content/planer.yaml` used to be read via
+-- Deno.readTextFile — works under `supabase functions serve` (real
+-- filesystem access from the checkout), but NOT after a real
+-- `supabase functions deploy` (the bundle doesn't contain content/).
+-- That caused a real, live-observed 500 (NotFound: /var/content/planer.yaml).
 --
--- Die gesamte geparste YAML-Struktur wandert unveraendert als ein JSONB-
--- Blob pro Version in diese Tabelle -- generate-plan liest damit exakt
--- dieselbe Struktur wie bisher, nur aus Postgres statt von der Platte,
--- und laesst sie durch dieselben Parser (_shared/content/planer_yaml.ts)
--- laufen. Fuer alle Nutzer identisch (Content/Konfiguration, kein
--- Nutzerzustand) -- RLS wie bei skill/aktivitaet/rasse: oeffentlich
--- lesbar, direkt in der DB gepflegt (CLAUDE.md, Regel 5 und 10).
+-- The entire parsed YAML structure moves unchanged as one JSONB blob per
+-- version into this table — generate-plan reads exactly the same structure
+-- as before, just from Postgres instead of disk, and runs it through the
+-- same parsers (_shared/content/planer_yaml.ts). Identical for every user
+-- (content/configuration, not user state) — RLS like skill/activity/breed:
+-- publicly readable, maintained directly in the DB (CLAUDE.md, rules 5 and
+-- 10).
 --
--- version bleibt weiterhin die in content/planer.yaml von Hand gepflegte
--- Versionsnummer (CLAUDE.md, Regel 6: Gewichte aendert kein Agent
--- eigenmaechtig) -- generate-plan liest immer die hoechste Version.
+-- `version` stays the version number maintained by hand in
+-- content/planer.yaml (CLAUDE.md, rule 6: weights are never changed by an
+-- agent on its own) — generate-plan always reads the highest version.
 
-create table planer_konfig (
+create table planner_config (
   version int primary key,
-  konfig jsonb not null,
-  erstellt_am timestamptz not null default now()
+  config jsonb not null,
+  created_at timestamptz not null default now()
 );
 
-alter table planer_konfig enable row level security;
+alter table planner_config enable row level security;
 
-create policy "planer_konfig ist oeffentlich lesbar" on planer_konfig
+create policy "planner_config is publicly readable" on planner_config
   for select using (true);

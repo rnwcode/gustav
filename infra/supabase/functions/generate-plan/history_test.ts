@@ -46,9 +46,9 @@ const activityById = new Map([['a', activity({ id: 'a', arousal: 2 })]]);
 Deno.test('resolveDailyLoads only counts succeeded/partial, zero elsewhere', () => {
   const loads = resolveDailyLoads({
     pastSlots: [
-      { datum: '2026-03-15', aktivitaet_id: 'a', ergebnis: 'klappte' },
-      { datum: '2026-03-14', aktivitaet_id: 'a', ergebnis: 'noch_nicht' },
-      { datum: '2026-03-13', aktivitaet_id: null, ergebnis: null },
+      { date: '2026-03-15', activity_id: 'a', outcome: 'succeeded' },
+      { date: '2026-03-14', activity_id: 'a', outcome: 'notYet' },
+      { date: '2026-03-13', activity_id: null, outcome: null },
     ],
     activityById,
     today,
@@ -65,8 +65,8 @@ Deno.test('resolveNeedCoverage sums Needs for counted slots only', () => {
   const scentActivity = activity({ id: 'sniff', needs: { ...ZERO_NEEDS, scent: 3 } });
   const coverage = resolveNeedCoverage({
     previousPeriodSlots: [
-      { datum: '2026-03-10', aktivitaet_id: 'sniff', ergebnis: 'klappte' },
-      { datum: '2026-03-11', aktivitaet_id: 'sniff', ergebnis: 'uebersprungen' },
+      { date: '2026-03-10', activity_id: 'sniff', outcome: 'succeeded' },
+      { date: '2026-03-11', activity_id: 'sniff', outcome: 'skipped' },
     ],
     activityById: new Map([['sniff', scentActivity]]),
   });
@@ -78,8 +78,8 @@ Deno.test('resolveLastUsed takes the most recent date per activity and variance 
   const a = activity({ id: 'a', varianceGroup: 'grp' });
   const { lastUsedByActivityId, lastUsedByVarianceGroup } = resolveLastUsed({
     allSlots: [
-      { datum: '2026-03-01', aktivitaet_id: 'a', ergebnis: 'uebersprungen' },
-      { datum: '2026-03-10', aktivitaet_id: 'a', ergebnis: null },
+      { date: '2026-03-01', activity_id: 'a', outcome: 'skipped' },
+      { date: '2026-03-10', activity_id: 'a', outcome: null },
     ],
     activityById: new Map([['a', a]]),
   });

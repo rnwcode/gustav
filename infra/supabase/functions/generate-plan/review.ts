@@ -1,21 +1,20 @@
 import type { Activity } from '../_shared/planner/models/activity.ts';
+import type { Outcome } from '../_shared/planner/models/enums.ts';
 import type { Skill } from '../_shared/planner/models/skill.ts';
 import type { SkillState } from '../_shared/planner/models/skill_state.ts';
 import { apply } from '../_shared/planner/steps/state_machine.ts';
 import type { StateMachineConfig } from '../_shared/planner/steps/state_machine_config.ts';
-import { outcomeFromGerman } from '../_shared/content/german_enums.ts';
 
-export interface RueckblickEntry {
+export interface ReviewEntry {
   readonly slotId: string;
-  /** German — `klappte`/`so_halb`/`noch_nicht`/`uebersprungen`/`nicht_geschafft`, as typed by the app. */
-  readonly ergebnis: string;
+  readonly outcome: Outcome;
 }
 
 /** The previous period's slots, only what's needed to resolve which skill (if any) a rating trains. */
 export interface RatedSlotRow {
   readonly id: string;
-  readonly datum: string;
-  readonly aktivitaet_id: string | null;
+  readonly date: string;
+  readonly activity_id: string | null;
 }
 
 function freshSkillState(args: {
@@ -39,13 +38,13 @@ function freshSkillState(args: {
 }
 
 /**
- * Processes one check-in's `rueckblick` — the ratings for the *previous*
+ * Processes one check-in's `review` — the ratings for the *previous*
  * period's slots — into updated `SkillState`s (via the state machine) and
- * the `slot.ergebnis` values to persist. Pure: no IO, the caller reads and
+ * the `slot.outcome` values to persist. Pure: no IO, the caller reads and
  * writes Postgres.
  */
-export function applyRueckblick(args: {
-  entries: readonly RueckblickEntry[];
+export function applyReview(args: {
+  entries: readonly ReviewEntry[];
   slotsById: ReadonlyMap<string, RatedSlotRow>;
   activityById: ReadonlyMap<string, Activity>;
   skillById: ReadonlyMap<string, Skill>;
@@ -54,22 +53,22 @@ export function applyRueckblick(args: {
   dogId: string;
 }): {
   updatedSkillStates: Map<string, SkillState>;
-  slotErgebnisUpdates: readonly { slotId: string; ergebnis: string }[];
+  slotOutcomeUpdates: readonly { slotId: string; outcome: Outcome }[];
 } {
   const { entries, slotsById, activityById, skillById, stateMachineConfig, dogId } = args;
 
   const updatedSkillStates = new Map(args.skillStates);
-  const slotErgebnisUpdates: { slotId: string; ergebnis: string }[] = [];
+  const slotOutcomeUpdates: { slotId: string; outcome: Outcome }[] = [];
 
   for (const entry of entries) {
-    slotErgebnisUpdates.push({ slotId: entry.slotId, ergebnis: entry.ergebnis });
+    slotOutcomeUpdates.push({ slotId: entry.slotId, outcome: entry.outcome });
 
     const slot = slotsById.get(entry.slotId);
-    if (slot === undefined || slot.aktivitaet_id === null) continue;
-    const activity = activityById.get(slot.aktivitaet_id);
+    if (slot === undefined || slot.activity_id === null) continue;
+    const activity = activityById.get(slot.activity_id);
     if (activity === undefined || activity.trainsSkill === null) continue;
 
-    const outcome = outcomeFromGerman(entry.ergebnis);
+    const outcome = entry.outcome;
     if (outcome !== 'succeeded' && outcome !== 'partial' && outcome !== 'notYet') continue;
 
     const skill = skillById.get(activity.trainsSkill);
@@ -83,11 +82,11 @@ export function applyRueckblick(args: {
         state,
         targetLevels: skill.targetLevels,
         outcome,
-        date: new Date(slot.datum),
+        date: new Date(slot.date),
         config: stateMachineConfig,
       }),
     );
   }
 
-  return { updatedSkillStates, slotErgebnisUpdates };
+  return { updatedSkillStates, slotOutcomeUpdates };
 }

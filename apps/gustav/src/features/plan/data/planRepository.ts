@@ -2,10 +2,10 @@ import { supabase } from '../../../lib/supabase';
 import type { PlanSlot, SlotResult, WeeklyPlan } from '../domain/weeklyPlan';
 import { weeklyPlanFromGeneratePlanResponse } from '../domain/weeklyPlan';
 
-/** A plan already exists for the current period (`wochenplanId`) — the
+/** A plan already exists for the current period (`weeklyPlanId`) — the
  * caller decides whether that's fine (nothing to do) or worth surfacing. */
 export class PeriodStillActiveError extends Error {
-  constructor(public readonly wochenplanId: string) {
+  constructor(public readonly weeklyPlanId: string) {
     super('period still active');
   }
 }
@@ -16,13 +16,13 @@ export class PeriodStillActiveError extends Error {
 export const planRepository = {
   async generatePlan(dogId: string): Promise<WeeklyPlan> {
     const { data, error } = await supabase.functions.invoke('generate-plan', {
-      body: { hundId: dogId },
+      body: { dogId },
     });
     if (error) {
       const context = (error as { context?: { status?: number; json?: () => Promise<unknown> } }).context;
       if (context?.status === 409) {
-        const body = (await context.json?.().catch(() => null)) as { wochenplanId?: string } | null;
-        if (body?.wochenplanId) throw new PeriodStillActiveError(body.wochenplanId);
+        const body = (await context.json?.().catch(() => null)) as { weeklyPlanId?: string } | null;
+        if (body?.weeklyPlanId) throw new PeriodStillActiveError(body.weeklyPlanId);
       }
       throw error;
     }
@@ -33,39 +33,39 @@ export const planRepository = {
    * DB — used after `PeriodStillActiveError`. `title`/`sentence` are not
    * persisted (they come from the content catalog at generation time), so
    * this reads dates and reasons only. */
-  async fetchStoredPlan(wochenplanId: string): Promise<WeeklyPlan> {
+  async fetchStoredPlan(weeklyPlanId: string): Promise<WeeklyPlan> {
     const { data: planRow, error: planError } = await supabase
-      .from('wochenplan')
-      .select('id, periode_start, periode_ende')
-      .eq('id', wochenplanId)
+      .from('weekly_plan')
+      .select('id, period_start, period_end')
+      .eq('id', weeklyPlanId)
       .single();
     if (planError) throw planError;
 
     const { data: slotRows, error: slotError } = await supabase
       .from('slot')
-      .select('id, datum, aktivitaet_id, begruendung_art, begruendung_skill_id, begruendung_bedarfsdimension, ergebnis')
-      .eq('wochenplan_id', wochenplanId)
-      .order('datum');
+      .select('id, date, activity_id, reason_kind, reason_skill_id, reason_need_dimension, outcome')
+      .eq('weekly_plan_id', weeklyPlanId)
+      .order('date');
     if (slotError) throw slotError;
 
     const slots: PlanSlot[] = (slotRows ?? []).map((row) => ({
       id: row.id as string,
-      date: row.datum as string,
-      activityId: row.aktivitaet_id as string | null,
+      date: row.date as string,
+      activityId: row.activity_id as string | null,
       title: null,
       sentence: null,
       reason: {
-        kind: row.begruendung_art,
-        skillId: row.begruendung_skill_id,
-        needDimension: row.begruendung_bedarfsdimension,
+        kind: row.reason_kind,
+        skillId: row.reason_skill_id,
+        needDimension: row.reason_need_dimension,
       },
-      result: row.ergebnis as SlotResult | null,
+      result: row.outcome as SlotResult | null,
     }));
 
     return {
       id: planRow.id as string,
-      periodStart: planRow.periode_start as string,
-      periodEnd: planRow.periode_ende as string,
+      periodStart: planRow.period_start as string,
+      periodEnd: planRow.period_end as string,
       slots,
     };
   },
@@ -73,20 +73,20 @@ export const planRepository = {
   /** `generate-plan`'s response has no slot ids (it returns the content the
    * planner just decided, not the rows it wrote) — fetch them once so
    * rating/relief actions have something to update. Keyed by ISO date. */
-  async fetchSlotIdsByDate(wochenplanId: string): Promise<Record<string, string>> {
+  async fetchSlotIdsByDate(weeklyPlanId: string): Promise<Record<string, string>> {
     const { data, error } = await supabase
       .from('slot')
-      .select('id, datum')
-      .eq('wochenplan_id', wochenplanId);
+      .select('id, date')
+      .eq('weekly_plan_id', weeklyPlanId);
     if (error) throw error;
-    return Object.fromEntries((data ?? []).map((row) => [row.datum as string, row.id as string]));
+    return Object.fromEntries((data ?? []).map((row) => [row.date as string, row.id as string]));
   },
 
   /** Sets or clears a slot's outcome — "Heute ist zu viel" writes
-   * `uebersprungen`, "Doch wieder anzeigen" clears it, and the exercise
-   * screen's rating buttons write the real result. */
+   * `skipped`, "Doch wieder anzeigen" clears it, and the exercise screen's
+   * rating buttons write the real result. */
   async setSlotResult(slotId: string, result: SlotResult | null): Promise<void> {
-    const { error } = await supabase.from('slot').update({ ergebnis: result }).eq('id', slotId);
+    const { error } = await supabase.from('slot').update({ outcome: result }).eq('id', slotId);
     if (error) throw error;
   },
 };

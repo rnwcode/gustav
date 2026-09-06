@@ -4,6 +4,14 @@
 Codebeispiele nennen die tatsächlichen Bezeichner aus
 `infra/supabase/functions/` (TypeScript).*
 
+*Update: Tabellen-/Spaltennamen sind seit der Umstellung auf englische
+Schemabezeichner Englisch — `planer_konfig`→`planner_config`,
+`konfig`→`config`. `skill`/`aktivitaet`/`rasse` weiter unten heißen heute
+`skill`/`activity`/`breed`. Der Inhalt der `config`-Spalte selbst (geparstes
+`content/planer.yaml`) bleibt Deutsch — das ist geschütztes Content/Gewicht,
+CLAUDE.md Regel 6. Aktuell maßgeblich: `infra/supabase/migrations/
+0004_planer_konfig.sql`.*
+
 ## Warum
 
 `generate-plan` las `content/planer.yaml` bisher per `Deno.readTextFile`

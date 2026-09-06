@@ -1,36 +1,48 @@
--- pgTAP-Test für skill/aktivitaet (0002_content.sql). Anders als bei den
--- Zustandstabellen geht es hier nicht um Besitzer-Isolation, sondern um
--- „für alle lesbar, für niemanden außer dem Seed-Skript schreibbar".
+-- pgTAP test for skill/activity + their *_text tables (0002_content.sql).
+-- Unlike the state tables, this isn't about owner isolation but about
+-- "readable by everyone, writable by no one except the seed script" — for
+-- content as for its (localized) text.
 
 begin;
-select plan(10);
+select plan(16);
 
-select has_table('public', 'skill', 'Tabelle skill existiert');
-select has_table('public', 'aktivitaet', 'Tabelle aktivitaet existiert');
+select has_table('public', 'skill', 'table skill exists');
+select has_table('public', 'skill_text', 'table skill_text exists');
+select has_table('public', 'activity', 'table activity exists');
+select has_table('public', 'activity_text', 'table activity_text exists');
 select ok(
   (select relrowsecurity from pg_class where relname = 'skill'),
-  'RLS ist auf skill aktiviert'
+  'RLS is enabled on skill'
 );
 select ok(
-  (select relrowsecurity from pg_class where relname = 'aktivitaet'),
-  'RLS ist auf aktivitaet aktiviert'
+  (select relrowsecurity from pg_class where relname = 'skill_text'),
+  'RLS is enabled on skill_text'
+);
+select ok(
+  (select relrowsecurity from pg_class where relname = 'activity'),
+  'RLS is enabled on activity'
+);
+select ok(
+  (select relrowsecurity from pg_class where relname = 'activity_text'),
+  'RLS is enabled on activity_text'
 );
 
-insert into skill (id, name, kategorie, min_alter_wochen, ist_kernskill, zielstufen, beschreibung)
-values (
-  'rueckruf', 'Rückruf', 'grundsignal', 9, true,
-  '{"dauer": 1, "distanz": 3, "ablenkung": 4}'::jsonb,
-  'Der Hund kommt zuverlässig zurück.'
-);
+insert into skill (id, category, min_age_weeks, is_core_skill, target_levels)
+values ('recall', 'basicCue', 9, true, '{"duration": 1, "distance": 3, "distraction": 4}'::jsonb);
+insert into skill_text (skill_id, locale, name, description)
+values ('recall', 'de', 'Rückruf', 'Der Hund kommt zuverlässig zurück.');
 
-insert into aktivitaet (
-  id, titel, satz, typ, trainiert_skill, bedarf, belastung,
-  dauer_min, dauer_max, ort, varianzgruppe, erfolgskriterium
+insert into activity (
+  id, type, trains_skill, needs, arousal, duration_min, duration_max, location, variance_group
 ) values (
-  'schnueffelteppich_einfuehrung', 'Schnüffelteppich, erste Runde',
-  'Futter im Teppich verstecken und suchen lassen.', 'beschaeftigung', null,
-  '{"koerperlich": 1, "kopfarbeit": 3, "nase": 3, "sozial": 0, "erholung": 1}'::jsonb,
-  1, 5, 15, 'drinnen', 'nasenarbeit_drinnen', 'Er sucht selbstständig weiter.'
+  'sniffing_mat_intro', 'enrichment', null,
+  '{"physical": 1, "mentalWork": 3, "scent": 3, "social": 0, "recovery": 1}'::jsonb,
+  1, 5, 15, 'indoors', 'sniffing_mat_intro'
+);
+insert into activity_text (activity_id, locale, title, sentence, success_criterion)
+values (
+  'sniffing_mat_intro', 'de', 'Schnüffelteppich, erste Runde',
+  'Futter im Teppich verstecken und suchen lassen.', 'Er sucht selbstständig weiter.'
 );
 
 set local role authenticated;
@@ -39,52 +51,60 @@ select set_config('request.jwt.claims', json_build_object('sub', '11111111-1111-
 select is(
   (select count(*)::int from skill),
   1,
-  'ein eingeloggter Nutzer sieht den Content, ohne einen eigenen Hund zu haben'
+  'a signed-in user sees the content without having their own dog'
 );
 select is(
-  (select count(*)::int from aktivitaet),
+  (select count(*)::int from skill_text),
   1,
-  'dasselbe für aktivitaet'
+  'same for skill_text'
+);
+select is(
+  (select count(*)::int from activity),
+  1,
+  'same for activity'
+);
+select is(
+  (select count(*)::int from activity_text),
+  1,
+  'same for activity_text'
 );
 
 select throws_ok(
-  $$ insert into skill (id, name, kategorie, min_alter_wochen, ist_kernskill, zielstufen, beschreibung)
-     values ('sitz', 'Sitz', 'grundsignal', 9, true, '{"dauer":0,"distanz":0,"ablenkung":0}'::jsonb, 'x') $$,
+  $$ insert into skill (id, category, min_age_weeks, is_core_skill, target_levels)
+     values ('sit', 'basicCue', 9, true, '{"duration":0,"distance":0,"distraction":0}'::jsonb) $$,
   '42501',
   null,
-  'ein eingeloggter Nutzer kann keinen Skill anlegen'
+  'a signed-in user cannot create a skill'
 );
--- Kein Fehler, aber auch keine getroffene Zeile: RLS ohne UPDATE-Policy
--- filtert die Zeile aus der Sicht heraus, statt die Anweisung abzulehnen
--- (dasselbe Muster wie in tests/hund.sql).
-update skill set name = 'Umbenannt' where id = 'rueckruf';
+-- No error, but no row hit either: RLS without an UPDATE policy filters the
+-- row out of view instead of rejecting the statement (same pattern as in
+-- tests/dog.sql).
+update skill_text set name = 'Renamed' where skill_id = 'recall' and locale = 'de';
 select is(
-  (select count(*)::int from skill where id = 'rueckruf' and name = 'Umbenannt'),
+  (select count(*)::int from skill_text where skill_id = 'recall' and name = 'Renamed'),
   0,
-  'und auch keinen bestehenden Skill ändern (RLS filtert ihn aus der Sicht heraus)'
+  'and cannot change an existing skill_text either (RLS filters it out of view)'
 );
 
 reset role;
 
 select is(
-  (select name from skill where id = 'rueckruf'),
+  (select name from skill_text where skill_id = 'recall' and locale = 'de'),
   'Rückruf',
-  'der Skill blieb dabei unangetastet'
+  'the skill_text stayed untouched'
 );
 
--- Ungültiger typ wird abgelehnt (Check-Constraint, unabhängig von RLS).
+-- An invalid type is rejected (check constraint, independent of RLS).
 select throws_ok(
-  $$ insert into aktivitaet (
-       id, titel, satz, typ, bedarf, belastung, dauer_min, dauer_max, ort,
-       varianzgruppe, erfolgskriterium
-     ) values (
-       'platzhalter', 'x', 'x', 'unbekannt',
-       '{"koerperlich":0,"kopfarbeit":0,"nase":0,"sozial":0,"erholung":0}'::jsonb,
-       0, 5, 10, 'drinnen', 'x', 'x'
+  $$ insert into activity (id, type, needs, arousal, duration_min, duration_max, location, variance_group)
+     values (
+       'placeholder', 'unknown',
+       '{"physical":0,"mentalWork":0,"scent":0,"social":0,"recovery":0}'::jsonb,
+       0, 5, 10, 'indoors', 'x'
      ) $$,
   '23514',
   null,
-  'ein unbekannter typ wird abgelehnt'
+  'an unknown type is rejected'
 );
 
 select * from finish();

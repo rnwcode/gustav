@@ -35,7 +35,7 @@ export function DayScreen() {
           <Label>Deine eine Sache</Label>
           <Body>Für heute liegt noch kein Tag in der aktuellen Periode vor.</Body>
         </View>
-      ) : slot.result === 'uebersprungen' ? (
+      ) : slot.result === 'skipped' ? (
         <View style={styles.content}>
           <Label>Deine eine Sache</Label>
           <Title>Nichts.</Title>
@@ -65,7 +65,7 @@ export function DayScreen() {
               Loslegen
             </Button>
             {slot.id ? (
-              <Button variant="text" onPress={() => setSlotResult(slot.id!, 'uebersprungen')}>
+              <Button variant="text" onPress={() => setSlotResult(slot.id!, 'skipped')}>
                 Heute ist zu viel
               </Button>
             ) : null}

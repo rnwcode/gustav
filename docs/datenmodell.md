@@ -37,17 +37,17 @@ und ohne den Satz fühlt sich der Plan wie eine Anweisung an.
 > Pfoten. Deine eine Sache: fünf Minuten Leinenführigkeit im Schatten, kurze
 > Strecke reicht völlig.
 
-Setzt voraus: `wetter.hitze_stufe` (aus Prognose + PLZ, nicht GPS),
-`hund.hitzeempfindlichkeit` (aus Rassegruppe, Körperbau, Alter, Gewicht),
-`aktivitaet.{ort, dauer_min, hitzetauglich}`, `slot.begruendung`.
+Setzt voraus: `weather.heatLevel` (aus Prognose + PLZ, nicht GPS),
+`dog.heatSensitivity` (aus Rassegruppe, Körperbau, Alter, Gewicht),
+`activity.{location, duration_min, heat_suitable}`, `slot.reason`.
 
 ### Donnerstag, nach einem vollen Tag
 > Gestern war die lange Runde dran, und du hast sie gemacht. Heute darf weniger
 > passieren — kurze Runde, viel schnüffeln lassen. Deine eine Sache: nichts.
 > Das ist die Übung.
 
-Setzt voraus: `belastungsbudget` (rollierend über 7 Tage), `slot.ergebnis`
-(was geplant war und was abgehakt wurde), `slot.aktivitaet = null` als
+Setzt voraus: `loadBudget` (rollierend über 7 Tage), `slot.outcome`
+(was geplant war und was abgehakt wurde), `slot.activity_id = null` als
 gültiges Ergebnis.
 
 *Wichtig:* Der Satz nennt bewusst nur, was die App selbst geplant hat. „Gestern
@@ -58,29 +58,29 @@ war viel los" wäre nur zulässig, wenn der Nutzer es im Rückblick gesagt hat.
 > Straße probieren — wenn jemand vorbeigeht und es nicht klappt, ist das kein
 > Rückschritt, sondern genau der Test.
 
-Setzt voraus: `skillstand.stufen.ablenkung`, `skillstand.status`,
-`aktivitaet.erfolgskriterium`.
+Setzt voraus: `skill_state.level_distraction`, `skill_state.status`,
+`activity_text.success_criterion`.
 
 ### Montag, Auffrischung von allein
 > Rückruf hattest du zuletzt vor zwei Wochen, und da lief er gut. Heute nur
 > einmal kurz abrufen, wenn er ohnehin bei dir ist — mehr braucht es nicht,
 > damit es drin bleibt.
 
-Setzt voraus: `skillstand.{faellig_am, intervall_tage}`, `skillstand.historie`,
-`aktivitaet.ist_auffrischung`.
+Setzt voraus: `skill_state.{due_at, interval_days}`, `skill_state.history`,
+`activity.is_refresher`.
 
 ### Dienstag, wenig Zeit angesagt
 > Du hattest gesagt, diese Woche wird eng. Heute steht nichts an, was
 > Vorbereitung braucht. Wenn zwischendurch zwei Minuten übrig sind: Handtouch
 > in der Küche, das geht im Vorbeigehen.
 
-Setzt voraus: `wochenkontext.constraints`, `aktivitaet.{equipment,
-zweite_person}`, `wochenkontext.quelle` (nur bei `chip` oder `freitext` darf
+Setzt voraus: `weeklyContext.constraints`, `activity.{equipment,
+second_person}`, `weeklyContext.source` (nur bei `chip` oder `freeText` darf
 „du hattest gesagt" fallen).
 
 > **Die restlichen sieben Beispieltage fehlen noch.** Sie zu schreiben ist der
 > nächste Schritt am Modell — bei den ersten fünf tauchten dabei
-> `einzugsdatum` und `wochenkontext.quelle` auf, die abstrakt nie modelliert
+> `arrival_date` und `weeklyContext.source` auf, die abstrakt nie modelliert
 > worden wären.
 
 ## Inhalt und Zustand sind getrennte Welten
@@ -102,48 +102,48 @@ trotz serverseitiger Ausführung.
 ## Hund und Haushalt
 
 ```
-# hund
+# dog
 id                    uuid
 name                  text
-geburtsdatum          date        # → alter_wochen, treibt die Welpenphase
-einzugsdatum          date        # 3 Jahre alt, seit 2 Wochen da = wie ein Welpe
-herkunft              enum züchter | tierschutz | privat | unbekannt
-groessenklasse        enum klein | mittel | gross
-koerperbau[]          enum brachyzephal | dichte_unterwolle | langbeinig
-einschraenkungen[]    enum schonung | gelenke | senior | rekonvaleszenz
-geschlecht            enum ruede | huendin | null   # null = nicht angegeben
-kastriert             bool | null                   # null = nicht angegeben
+birth_date            date        # → ageWeeks, treibt die Welpenphase
+arrival_date          date        # 3 Jahre alt, seit 2 Wochen da = wie ein Welpe
+origin                enum breeder | shelter | private | unknown
+size_class            enum small | medium | large
+body_type[]           enum brachycephalic | denseUndercoat | longLegged
+restrictions[]        enum protectiveCare | jointIssues | senior | recovery
+gender                enum male | female | null   # null = nicht angegeben
+neutered              bool | null                  # null = nicht angegeben
 
-# rasse — für alle Hunde gleich, kein Nutzerzustand (docs/specs/rasse-modellieren.md)
+# breed — für alle Hunde gleich, kein Nutzerzustand (docs/specs/rasse-modellieren.md)
 id                    text
 name                  text
-rassegruppe           enum hüte | jagd | begleit | herdenschutz | terrier
-                           | wind | nordisch | molosser | misch
+breed_group           enum herding | hunting | companion | livestockGuardian | terrier
+                           | sighthound | nordic | molosser | mixed
 
-# hund_rasse — Verknüpfung, mehrere Zeilen pro Hund bei einem Mischling
-hund_id               uuid
-rasse_id              text
-gewichtung            numeric?    # null = gleichmäßig verteilt auf alle
+# dog_breed — Verknüpfung, mehrere Zeilen pro Hund bei einem Mischling
+dog_id                uuid
+breed_id              text
+weight                numeric?    # null = gleichmäßig verteilt auf alle
                                   # Rassen dieses Hundes, kein Pflegeaufwand
                                   # im Normalfall
 
 # abgeleitet, nicht gespeichert
-hitzeempfindlichkeit  0–3   # brachyzephal +2, dichte Unterwolle +1,
+heatSensitivity       0–3   # brachyzephal +2, dichte Unterwolle +1,
                             # gross +1, welpe/senior +1, gedeckelt bei 3
-lebensphase           enum welpe (<16 W) | junghund (<30) | pubertaet (<70)
-                           | erwachsen | senior (gross ab 312 W, mittel 364,
+lifeStage             enum puppy (<16 W) | adolescent (<30) | puberty (<70)
+                           | adult | senior (gross ab 312 W, mittel 364,
                              klein 416)
 
-# haushalt
-plz                   text?       # optional, nur für Wetter — kein GPS
-wohnsituation         enum wohnung | haus_garten
-umgebung              enum stadt | vorort | land
-erfahrung             enum ersthund | erfahren
-zeitbudget_werktag    minuten     # realistisch gefragt, nicht ambitioniert
-zeitbudget_wochenende minuten
-trainingstage[]       enum mo…so
-planungstag           enum mo…so  # Vorgabe so — Schichtdienst
-personen              int         # mehrere Trainierende = Konsistenzproblem
+# household
+postal_code           text?       # optional, nur für Wetter — kein GPS
+housing_type          enum apartment | houseWithGarden
+surroundings          enum city | suburb | countryside
+experience            enum firstTimeOwner | experienced
+weekday_time_budget_min   minuten     # realistisch gefragt, nicht ambitioniert
+weekend_time_budget_min   minuten
+training_days[]       enum monday…sunday
+planning_day          enum monday…sunday  # Vorgabe sunday — Schichtdienst
+household_size        int         # mehrere Trainierende = Konsistenzproblem
 equipment[]           text
 ```
 
@@ -155,9 +155,9 @@ Sicherheit: brachyzephale Hunde bei Hitze.
 **Rasse statt Rassegruppe direkt am Hund** (vorgezogen aus dem Backlog, siehe
 `produkt.md`, Abschnitt „Zielgruppe und Umfang des MVP", und
 `docs/specs/rasse-modellieren.md`): Die Rassegruppe hängt jetzt an einer
-eigenen `rasse`-Zeile, nicht mehr direkt am Hund — ein Mischling kann über
-`hund_rasse` mehrere Rassen verknüpfen, gewichtet. `groessenklasse` und
-`koerperbau` bleiben am Hund: sie werden unabhängig von der Rassegruppe
+eigenen `breed`-Zeile, nicht mehr direkt am Hund — ein Mischling kann über
+`dog_breed` mehrere Rassen verknüpfen, gewichtet. `size_class` und
+`body_type` bleiben am Hund: sie werden unabhängig von der Rassegruppe
 direkt vom Halter angegeben, sind also Eigenschaften des einzelnen Tieres,
 keine Rasseeigenschaften. Echte, einzeln benannte Rassen (statt nur der
 neun Gruppen) sind noch nicht befüllt — das ist Fachwissen über korrekte
@@ -184,15 +184,15 @@ Skill-Schema siehe `content/schema/skill.yaml`.
 ## Skill-Zustand pro Hund
 
 ```
-hund_id            uuid
+dog_id             uuid
 skill_id           text
-status             enum nicht_begonnen | aufbau | generalisierung
-                        | gefestigt | erhaltung | ruht
-stufen             { dauer: 0–5, distanz: 0–5, ablenkung: 0–5 }
-historie[]         { datum, ergebnis, stufen }   # letzte 10 genügen
-letzte_uebung_am   date
-faellig_am         date
-intervall_tage     int
+status             enum notStarted | building | generalizing
+                        | consolidated | maintenance | dormant
+levels             { duration: 0–5, distance: 0–5, distraction: 0–5 }
+history[]          { date, outcome, levels }   # letzte 10 genügen
+last_practiced_at  date
+due_at             date
+interval_days      int
 ```
 
 ### Zustandsübergänge
@@ -200,15 +200,15 @@ intervall_tage     int
 | Auslöser | Wirkung |
 |---|---|
 | 3× „klappte" auf der Stufe | ein D erhöhen (Reihenfolge Dauer → Distanz → Ablenkung), die anderen beiden je −1 |
-| 2× „noch nicht" in Folge | aktives D um 1 zurück; bei Stufe 0 Status auf `aufbau` |
+| 2× „noch nicht" in Folge | aktives D um 1 zurück; bei Stufe 0 Status auf `building` |
 | „so halb" | Stufe bleibt, Intervall bleibt — Wiederholung ohne Bewertungsdruck |
-| Ablenkung ≥ 2 sicher | `aufbau` → `generalisierung` |
-| Zielstufen erreicht | → `gefestigt`, danach automatisch `erhaltung` |
-| Nutzer meldet Problem im Check-in | `erhaltung` → `generalisierung`, Stufe −1 |
+| Ablenkung ≥ 2 sicher | `building` → `generalizing` |
+| Zielstufen erreicht | → `consolidated`, danach automatisch `maintenance` |
+| Nutzer meldet Problem im Check-in | `maintenance` → `generalizing`, Stufe −1 |
 
 ### Intervalle (Spaced Repetition)
 
-Bei „klappte" wird das Intervall mit `faktor_bei_erfolg` multipliziert und am
+Bei „klappte" wird das Intervall mit `successFactor` multipliziert und am
 Deckel gekappt; bei „noch nicht" fällt es auf den Startwert zurück; bei
 „so halb" bleibt es. Werte stehen in `content/planer.yaml`.
 
@@ -222,7 +222,9 @@ Alltagsroutine, Ruhevorschlag. **Nicht jede trainiert einen Skill** — genau
 deshalb trägt dasselbe Modell später den erwachsenen Hund, bei dem die Frage
 nicht mehr „was muss er können" lautet, sondern „wie beschäftige ich ihn".
 
-Vollständiges Schema mit allen Feldern: `content/schema/aktivitaet.yaml`.
+Vollständiges Schema mit allen Feldern: `content/schema/aktivitaet.yaml`
+(Content-Schema, weiterhin Deutsch — die produktive `activity`-Tabelle
+selbst trägt englische Spaltennamen, `0002_content.sql`).
 Ausgeschriebenes Beispiel: `content/aktivitaeten/schnueffelteppich_einfuehrung.yaml`.
 
 **Sperrfrist gilt nicht für alles.** Die 14-Tage-Regel gegen Monotonie ist für
@@ -233,23 +235,23 @@ nicht an der Aktivität, und Kernskills sind ausgenommen.
 ## Check-in und Belastungsbudget
 
 ```
-# wochen_checkin
-rueckblick[]       { slot_id, ergebnis }
-                   ergebnis: klappte | so_halb | noch_nicht
-                           | uebersprungen | nicht_geschafft
-freitext_rueckblick text?
-absicht_chips[]    leinen | rueckruf | ruhe | alleinbleiben | besuch
-                   | wenig_zeit | urlaub | mehr_kopfarbeit | weiss_nicht
-freitext_absicht   text?
-tage_verfuegbar[]  enum mo…so
-rueckblick_chips[] viel_los | krank | reise | tierarzt | alles_ruhig
+# checkin
+review[]           { slot_id, outcome }
+                   outcome: succeeded | partial | notYet
+                           | skipped | notCompleted
+review_freetext    text?
+intent_chips[]     leash | recall | calm | homeAlone | visitors
+                   | shortOnTime | vacation | moreMentalWork | notSure
+intent_freetext    text?
+days_available[]   enum monday…sunday
+review_chips[]     busyWeek | illness | travel | vetVisit | calmWeek
                    # optional, im Planungstag-Screen — nie täglich abgefragt
 
-# wochenkontext — abgeleitet; das Ergebnis des LLM-Übersetzers
-prioritaeten[]     { skill_id | thema, gewicht 0–3 }
-constraints        { tage[], minuten_pro_tag, orte[] }
+# weeklyContext — abgeleitet; das Ergebnis des LLM-Übersetzers
+priorities[]       { skillIdOrTopic, weight 0–3 }
+constraints        { days[], minutesPerDay, locations[] }
 flags[]            radfahrer | hitze | schonung | ueberdreht | …
-quelle             enum chip | freitext | default
+source             enum chip | freeText | fallback
                    # entscheidet, ob die App „du hattest gesagt" sagen darf
 ```
 
@@ -257,7 +259,7 @@ quelle             enum chip | freitext | default
 
 | Signal | Herkunft | Kosten für den Nutzer |
 |---|---|---|
-| geplant + abgehakt | eigener Plan, `slot.ergebnis` | der Tipp, der ohnehin passiert |
+| geplant + abgehakt | eigener Plan, `slot.outcome` | der Tipp, der ohnehin passiert |
 | nicht abgehakt | Ausbleiben des Tipps | keine — die Nicht-Handlung ist das Signal |
 | Rückblick-Chips | Planungstag-Screen | optional, im vorhandenen Screen |
 | „Heute ist zu viel" | Tagesansicht | Entlastungsknopf, keine Abfrage |
@@ -265,7 +267,7 @@ quelle             enum chip | freitext | default
 Drei übersprungene Tage in Folge sagen der App nicht, *warum* die Woche voll
 war — aber dass sie es war, und das genügt, um leiser zu werden.
 
-Quote = Summe der Belastung über 7 Tage / 7 / `belastbarkeit_pro_tag`.
+Quote = Summe der Belastung über 7 Tage / 7 / `capacityPerDay`.
 Schwellen in `content/planer.yaml`.
 
 ## Der Planer
@@ -281,43 +283,43 @@ ungeseedeten Zufallszahlen, kein LLM. Alle Parameter kommen aus
    später Wetterprognose
 
 2  Slots festlegen
-   Periodenlänge: bis zum nächsten planungstag, min 5, max 10 — danach 7
+   Periodenlänge: bis zum nächsten planning_day, min 5, max 10 — danach 7
    verfügbare Tage × 1 Slot
-   mindestens 1 bewusst leerer Slot; bei erholungsbedarf hoch: 2
-   Obergrenzen je Lebensphase (aktive Slots, Trainingseinheiten)
+   mindestens 1 bewusst leerer Slot; bei recoveryNeed hoch: 2
+   Obergrenzen je lifeStage (aktive Slots, Trainingseinheiten)
 
 3  Kandidaten sammeln
-   a) fällige Auffrischungen        (faellig_am ≤ Periodenende)
+   a) fällige Auffrischungen        (due_at ≤ Periodenende)
    b) Prioritäten aus dem Check-in  (Skill auf aktueller Stufe)
    c) Bedarfslücken der Vorperiode  (welche Dimension kam zu kurz)
    d) neue Skills                   (Voraussetzungen + Alter erfüllt)
 
 4  Hart filtern
    Alter · Voraussetzungen · Equipment · zweite Person
-   Einschränkungen (Schonung schließt Belastung ≥ 2 aus)
+   Einschränkungen (protectiveCare schließt Belastung ≥ 2 aus)
    Sperrfrist der Varianzgruppe · Ort · Saisonfenster
    Eingewöhnung (< 6 Wochen im Haushalt: max Ablenkung 1)
-   Sicherheit (Hitze × Hitzeempfindlichkeit)
-   bei typ=training: fuer_ablenkung muss die aktuelle Stufe enthalten
-   gefestigt/erhaltung → nur ist_auffrischung
+   Sicherheit (Hitze × heatSensitivity)
+   bei type=training: for_distraction muss die aktuelle Stufe enthalten
+   consolidated/maintenance → nur is_refresher
 
 5  Scoren   (Gewichte aus content/planer.yaml)
-   score =  w_prioritaet   · prioritaet
-          + w_faellig      · min(ueberfaellig_tage / 7, deckel)
-          + w_bedarf       · bedarfsluecke
-          + w_neu          · ist_neuer_skill
-          + w_eignung      · Σ eignung[rassegruppe] · anteil[rassegruppe]
+   score =  w_priority     · priority
+          + w_dueRefresher · min(überfällige_tage / 7, deckel)
+          + w_needGap      · needGap
+          + w_newSkill     · isNewSkill
+          + w_suitability  · Σ suitability[breedGroup] · anteil[breedGroup]
                              (eine Rasse: anteil = 1; Mischling: Anteile
-                             summieren sich zu 1, `hund_rasse.gewichtung`)
-          − w_belastung    · belastung      (nur bei erholungsbedarf ≥ mittel)
-          − w_kuerzlich    · kuerzlich_gemacht
+                             summieren sich zu 1, `dog_breed.weight`)
+          − w_arousal      · arousal        (nur bei recoveryNeed ≥ medium)
+          − w_recentlyDone · recentlyDone
    Tie-Break deterministisch über die Aktivitäts-ID.
 
 6  Zuweisen, Tag für Tag
    nie zwei Tage in Folge mit maximaler Belastung
-   nach einem Tag mit Belastung ≥ 2 folgt typ = ruhe oder beschaeftigung
+   nach einem Tag mit Belastung ≥ 2 folgt type = rest oder enrichment
    anspruchsvolle Einheiten nicht auf den kürzesten Tag
-   Trainingseinheit nur auf Tagen aus trainingstage[]
+   Trainingseinheit nur auf Tagen aus training_days[]
    Dauer ≤ Zeitbudget des Tages
 
 7  Periode gegenprüfen
@@ -338,8 +340,8 @@ Hitze oder Dauerregen wird gegen eine gleichwertige Aktivität mit anderem
 Satz. Das ergibt nebenbei einen zweiten täglichen Kontaktpunkt, der nach
 Service klingt statt nach Erinnerung.
 
-**Ein Plan wird einmal erzeugt und gespeichert**, mit `algorithmus_version`
-und `konfig_version` daneben — nie bei jedem Öffnen neu gerechnet.
+**Ein Plan wird einmal erzeugt und gespeichert**, mit `algorithm_version`
+und `config_version` daneben — nie bei jedem Öffnen neu gerechnet.
 
 ## Test-Fixtures
 

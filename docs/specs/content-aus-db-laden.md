@@ -4,6 +4,19 @@
 Codebeispiele nennen die tatsächlichen Bezeichner aus
 `infra/supabase/functions/` (TypeScript).*
 
+*Update: Die nutzersichtbaren Textfelder von `skill`/`activity` (unten noch
+`aktivitaet` genannt — die Tabelle heißt seit der Umstellung auf englische
+Schemabezeichner `activity`, unten als Teil dieser beiden Tabellen
+beschrieben) stehen mittlerweile in eigenen `skill_text`/`activity_text`-
+Tabellen, keyed by `(id, locale)` — Mehrsprachigkeit vorbereitet, ohne
+späteren Schema-Umbau. Der Rest dieser Spec (öffentlich lesbar, kein
+Datei-Import) gilt unverändert; nur die Übersetzung über die YAML-Parser
+gilt jetzt ausschließlich für die weiterhin deutschen
+`content/{aktivitaeten,skills}/*.yaml`-Dateien (Simulator) — die DB-Zeilen
+selbst tragen englische Spalten und laufen nicht mehr durch diesen Parser
+(`rows.ts` mappt sie direkt). Details: `0002_content.sql`,
+`generate-plan/README.md`.*
+
 ## Warum
 
 `generate-plan` liest Skills und Aktivitäten bisher aus

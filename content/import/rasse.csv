@@ -1,23 +1,23 @@
-id,name,rassegruppe
-gruppe_huete,Hüte,huete
-gruppe_jagd,Jagd,jagd
-gruppe_begleit,Begleit,begleit
-gruppe_herdenschutz,Herdenschutz,herdenschutz
+id,name,breed_group
+gruppe_huete,Hüte,herding
+gruppe_jagd,Jagd,hunting
+gruppe_begleit,Begleit,companion
+gruppe_herdenschutz,Herdenschutz,livestockGuardian
 gruppe_terrier,Terrier,terrier
-gruppe_wind,Wind,wind
-gruppe_nordisch,Nordisch,nordisch
+gruppe_wind,Wind,sighthound
+gruppe_nordisch,Nordisch,nordic
 gruppe_molosser,Molosser,molosser
-gruppe_misch,Mischling,misch
-deutscher_schaeferhund,Deutscher Schäferhund,huete
-border_collie,Border Collie,huete
-australian_shepherd,Australian Shepherd,huete
-australian_cattle_dog,Australian Cattle Dog,huete
-welsh_corgi_pembroke,Welsh Corgi Pembroke,huete
-beauceron,Beauceron,huete
-shetland_sheepdog,Shetland Sheepdog (Sheltie),huete
-bearded_collie,Bearded Collie,huete
-puli,Puli,huete
-altdeutscher_huetehund,Altdeutscher Hütehund,huete
+gruppe_misch,Mischling,mixed
+deutscher_schaeferhund,Deutscher Schäferhund,herding
+border_collie,Border Collie,herding
+australian_shepherd,Australian Shepherd,herding
+australian_cattle_dog,Australian Cattle Dog,herding
+welsh_corgi_pembroke,Welsh Corgi Pembroke,herding
+beauceron,Beauceron,herding
+shetland_sheepdog,Shetland Sheepdog (Sheltie),herding
+bearded_collie,Bearded Collie,herding
+puli,Puli,herding
+altdeutscher_huetehund,Altdeutscher Hütehund,herding
 dobermann,Dobermann,molosser
 rottweiler,Rottweiler,molosser
 boxer,Boxer,molosser
@@ -29,13 +29,13 @@ neapolitanischer_mastino,Neapolitanischer Mastino,molosser
 riesenschnauzer,Riesenschnauzer,molosser
 zwergschnauzer,Zwergschnauzer,molosser
 mastiff,Mastiff,molosser
-boston_terrier,Boston Terrier,begleit
-kangal,Kangal,herdenschutz
-pyrenaeenberghund,Pyrenäenberghund,herdenschutz
-maremmano_abruzzese,Maremmano-Abruzzese Schäferhund,herdenschutz
-kuvasz,Kuvasz,herdenschutz
-kaukasischer_owtscharka,Kaukasischer Owtscharka,herdenschutz
-tibet_dogge,Tibet-Dogge,herdenschutz
+boston_terrier,Boston Terrier,companion
+kangal,Kangal,livestockGuardian
+pyrenaeenberghund,Pyrenäenberghund,livestockGuardian
+maremmano_abruzzese,Maremmano-Abruzzese Schäferhund,livestockGuardian
+kuvasz,Kuvasz,livestockGuardian
+kaukasischer_owtscharka,Kaukasischer Owtscharka,livestockGuardian
+tibet_dogge,Tibet-Dogge,livestockGuardian
 jack_russell_terrier,Jack Russell Terrier,terrier
 foxterrier,Foxterrier,terrier
 bullterrier,Bullterrier,terrier
@@ -46,47 +46,47 @@ yorkshire_terrier,Yorkshire Terrier,terrier
 airedale_terrier,Airedale Terrier,terrier
 cairn_terrier,Cairn Terrier,terrier
 scottish_terrier,Scottish Terrier,terrier
-dackel,Dackel,jagd
-beagle,Beagle,jagd
-deutsche_bracke,Deutsche Bracke,jagd
-basset_hound,Basset Hound,jagd
-bracke_st_hubert,Bracke St. Hubert (Bloodhound),jagd
-rhodesian_ridgeback,Rhodesian Ridgeback,jagd
-deutsch_kurzhaar,Deutsch Kurzhaar,jagd
-deutsch_drahthaar,Deutsch Drahthaar,jagd
-weimaraner,Weimaraner,jagd
-pointer,Pointer,jagd
-irish_setter,Irish Setter,jagd
-englisch_setter,Englisch Setter,jagd
-labrador_retriever,Labrador Retriever,jagd
-golden_retriever,Golden Retriever,jagd
-cocker_spaniel,Cocker Spaniel,jagd
-englischer_springer_spaniel,Englischer Springer Spaniel,jagd
-magyar_vizsla,Magyar Vizsla,jagd
-siberian_husky,Siberian Husky,nordisch
-alaskan_malamute,Alaskan Malamute,nordisch
-akita,Akita,nordisch
-chow_chow,Chow-Chow,nordisch
-deutscher_spitz,Deutscher Spitz,nordisch
-samojede,Samojede,nordisch
-shiba_inu,Shiba Inu,nordisch
-finnischer_lapphund,Finnischer Lapphund,nordisch
-chihuahua,Chihuahua,begleit
-mops,Mops,begleit
-malteser,Malteser,begleit
-cavalier_king_charles_spaniel,Cavalier King Charles Spaniel,begleit
-havaneser,Havaneser,begleit
-pudel,Pudel,begleit
-bichon_frise,Bichon Frisé,begleit
-shih_tzu,Shih Tzu,begleit
-franzoesische_bulldogge,Französische Bulldogge,begleit
-lhasa_apso,Lhasa Apso,begleit
-zwergpinscher,Zwergpinscher,begleit
-englische_bulldogge,Englische Bulldogge,begleit
-greyhound,Greyhound,wind
-whippet,Whippet,wind
-afghanischer_windhund,Afghanischer Windhund,wind
-barsoi,Barsoi,wind
-irish_wolfhound,Irish Wolfhound,wind
-saluki,Saluki,wind
-galgo_espanol,Galgo Español,wind
+dackel,Dackel,hunting
+beagle,Beagle,hunting
+deutsche_bracke,Deutsche Bracke,hunting
+basset_hound,Basset Hound,hunting
+bracke_st_hubert,Bracke St. Hubert (Bloodhound),hunting
+rhodesian_ridgeback,Rhodesian Ridgeback,hunting
+deutsch_kurzhaar,Deutsch Kurzhaar,hunting
+deutsch_drahthaar,Deutsch Drahthaar,hunting
+weimaraner,Weimaraner,hunting
+pointer,Pointer,hunting
+irish_setter,Irish Setter,hunting
+englisch_setter,Englisch Setter,hunting
+labrador_retriever,Labrador Retriever,hunting
+golden_retriever,Golden Retriever,hunting
+cocker_spaniel,Cocker Spaniel,hunting
+englischer_springer_spaniel,Englischer Springer Spaniel,hunting
+magyar_vizsla,Magyar Vizsla,hunting
+siberian_husky,Siberian Husky,nordic
+alaskan_malamute,Alaskan Malamute,nordic
+akita,Akita,nordic
+chow_chow,Chow-Chow,nordic
+deutscher_spitz,Deutscher Spitz,nordic
+samojede,Samojede,nordic
+shiba_inu,Shiba Inu,nordic
+finnischer_lapphund,Finnischer Lapphund,nordic
+chihuahua,Chihuahua,companion
+mops,Mops,companion
+malteser,Malteser,companion
+cavalier_king_charles_spaniel,Cavalier King Charles Spaniel,companion
+havaneser,Havaneser,companion
+pudel,Pudel,companion
+bichon_frise,Bichon Frisé,companion
+shih_tzu,Shih Tzu,companion
+franzoesische_bulldogge,Französische Bulldogge,companion
+lhasa_apso,Lhasa Apso,companion
+zwergpinscher,Zwergpinscher,companion
+englische_bulldogge,Englische Bulldogge,companion
+greyhound,Greyhound,sighthound
+whippet,Whippet,sighthound
+afghanischer_windhund,Afghanischer Windhund,sighthound
+barsoi,Barsoi,sighthound
+irish_wolfhound,Irish Wolfhound,sighthound
+saluki,Saluki,sighthound
+galgo_espanol,Galgo Español,sighthound

@@ -1,12 +1,12 @@
 import type { WeeklyContext } from '../_shared/planner/models/checkin.ts';
-import { weekdayFromGerman } from '../_shared/content/german_enums.ts';
+import type { Weekday } from '../_shared/planner/models/enums.ts';
 
 /**
  * Translates the raw planning-day check-in into `WeeklyContext` — template
  * for the MVP, an LLM later (`docs/datenmodell.md`, backlog V1.2). This is
  * deliberately the simplest translation that is still honest:
  *
- * - `absichtChips` become `flags` verbatim. `docs/datenmodell.md` describes
+ * - `intentChips` become `flags` verbatim. `docs/datenmodell.md` describes
  *   flags as open-ended ("produced by the translator", not enumerated up
  *   front) — and no planner step currently reads `WeeklyContext.flags` at
  *   all, so inventing a chip → skill-priority mapping now would have zero
@@ -18,17 +18,17 @@ import { weekdayFromGerman } from '../_shared/content/german_enums.ts';
  *   carries either today.
  */
 export function translateCheckin(input: {
-  readonly absichtChips: readonly string[];
-  readonly tageVerfuegbar: readonly string[];
+  readonly intentChips: readonly string[];
+  readonly daysAvailable: readonly string[];
 }): WeeklyContext {
   return {
     priorities: [],
     constraints: {
-      days: new Set(input.tageVerfuegbar.map(weekdayFromGerman)),
+      days: new Set(input.daysAvailable as readonly Weekday[]),
       minutesPerDay: null,
       locations: [],
     },
-    flags: new Set(input.absichtChips),
-    source: input.absichtChips.length > 0 ? 'chip' : 'fallback',
+    flags: new Set(input.intentChips),
+    source: input.intentChips.length > 0 ? 'chip' : 'fallback',
   };
 }

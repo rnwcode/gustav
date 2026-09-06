@@ -32,7 +32,7 @@ export const usePlanStore = create<PlanState>((set, get) => ({
         plan = await planRepository.generatePlan(dogId);
       } catch (err) {
         if (err instanceof PeriodStillActiveError) {
-          plan = await planRepository.fetchStoredPlan(err.wochenplanId);
+          plan = await planRepository.fetchStoredPlan(err.weeklyPlanId);
           set({ plan, status: 'ready' });
           return;
         }

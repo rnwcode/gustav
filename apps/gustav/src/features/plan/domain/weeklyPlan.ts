@@ -1,25 +1,25 @@
 // Mirrors `Reason` (`_shared/planner/models/weekly_plan.ts`) and
-// `slot.begruendung_*` (`0001_init.sql`). German wire values, matching the
-// DB check constraint.
+// `slot.reason_*` (`0001_init.sql`) — same English vocabulary throughout,
+// DB included.
 export const REASON_KINDS = [
-  'leer',
-  'neuer_skill',
-  'faellig',
-  'prioritaet',
-  'bedarfsluecke',
-  'erholungsbedarf',
+  'empty',
+  'newSkill',
+  'dueRefresher',
+  'priority',
+  'needGap',
+  'recoveryNeed',
 ] as const;
 export type ReasonKind = (typeof REASON_KINDS)[number];
 
 /** UI-only descriptions of why a day looks the way it does — describing, not
  * instructing (CLAUDE.md, Tonalität). */
 export const REASON_LABELS: Record<ReasonKind, string> = {
-  leer: 'Bewusst frei',
-  neuer_skill: 'Neuer Skill',
-  faellig: 'Fällig zur Wiederholung',
-  prioritaet: 'Aus dem Check-in',
-  bedarfsluecke: 'Bedarfslücke',
-  erholungsbedarf: 'Erholung',
+  empty: 'Bewusst frei',
+  newSkill: 'Neuer Skill',
+  dueRefresher: 'Fällig zur Wiederholung',
+  priority: 'Aus dem Check-in',
+  needGap: 'Bedarfslücke',
+  recoveryNeed: 'Erholung',
 };
 
 export type PlanReason = {
@@ -28,16 +28,16 @@ export type PlanReason = {
   needDimension: string | null;
 };
 
-// Matches `slot.ergebnis`'s check constraint.
-export const SLOT_RESULTS = ['klappte', 'so_halb', 'noch_nicht', 'uebersprungen', 'nicht_geschafft'] as const;
+// Matches `slot.outcome`'s check constraint.
+export const SLOT_RESULTS = ['succeeded', 'partial', 'notYet', 'skipped', 'notCompleted'] as const;
 export type SlotResult = (typeof SLOT_RESULTS)[number];
 
 export const SLOT_RESULT_LABELS: Record<SlotResult, string> = {
-  klappte: 'Klappte',
-  so_halb: 'So halb',
-  noch_nicht: 'Noch nicht',
-  uebersprungen: 'Übersprungen',
-  nicht_geschafft: 'Nicht geschafft',
+  succeeded: 'Klappte',
+  partial: 'So halb',
+  notYet: 'Noch nicht',
+  skipped: 'Übersprungen',
+  notCompleted: 'Nicht geschafft',
 };
 
 /** One day of the plan. `activityId === null` is a deliberately empty day —
@@ -64,14 +64,14 @@ export type WeeklyPlan = {
 export function planSlotFromGeneratePlanResponse(json: any): PlanSlot {
   return {
     id: null,
-    date: json.datum,
-    activityId: json.aktivitaetId ?? null,
-    title: json.titel ?? null,
-    sentence: json.satz ?? null,
+    date: json.date,
+    activityId: json.activityId ?? null,
+    title: json.title ?? null,
+    sentence: json.sentence ?? null,
     reason: {
-      kind: json.begruendung.kind,
-      skillId: json.begruendung.skillId ?? null,
-      needDimension: json.begruendung.needDimension ?? null,
+      kind: json.reason.kind,
+      skillId: json.reason.skillId ?? null,
+      needDimension: json.reason.needDimension ?? null,
     },
     result: null,
   };
@@ -79,9 +79,9 @@ export function planSlotFromGeneratePlanResponse(json: any): PlanSlot {
 
 export function weeklyPlanFromGeneratePlanResponse(json: any): WeeklyPlan {
   return {
-    id: json.wochenplanId,
-    periodStart: json.periodeStart,
-    periodEnd: json.periodeEnde,
+    id: json.weeklyPlanId,
+    periodStart: json.periodStart,
+    periodEnd: json.periodEnd,
     slots: (json.slots as unknown[]).map(planSlotFromGeneratePlanResponse),
   };
 }

@@ -46,7 +46,7 @@ export const initialDraft: OnboardingDraft = {
   weekdayTimeBudgetMinutes: null,
   weekendTimeBudgetMinutes: null,
   trainingDays: new Set(),
-  planningDay: 'so',
+  planningDay: 'sunday',
   householdSize: 1,
   equipment: [],
 };

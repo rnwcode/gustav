@@ -4,6 +4,14 @@
 Codebeispiele nennen die tatsächlichen Bezeichner aus
 `infra/supabase/functions/` (TypeScript).*
 
+*Update: Tabellen-/Spaltennamen sind seit der Umstellung auf englische
+Schemabezeichner Englisch — `hund`→`dog`, `rasse`→`breed`,
+`hund_rasse`→`dog_breed`, `rassegruppe`→`breed_group`,
+`hund.besitzer`→`dog.owner`, `geschlecht`→`gender`
+(`ruede`/`huendin`→`male`/`female`), `gewichtung`→`weight`. Die unten
+gezeigten Bezeichner sind historisch; aktuell maßgeblich sind
+`infra/supabase/migrations/0003_rasse.sql` und `docs/datenmodell.md`.*
+
 ## Warum
 
 `hund.rassegruppe` ist heute ein einzelner, von Hand gewählter Wert aus

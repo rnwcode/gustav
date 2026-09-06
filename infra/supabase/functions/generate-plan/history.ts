@@ -6,9 +6,9 @@ import { toDateString } from './rows.ts';
 
 /** One past `slot` row — only the columns the history resolution needs. */
 export interface PastSlotRow {
-  readonly datum: string;
-  readonly aktivitaet_id: string | null;
-  readonly ergebnis: string | null;
+  readonly date: string;
+  readonly activity_id: string | null;
+  readonly outcome: string | null;
 }
 
 const ALL_NEED_DIMENSIONS: readonly NeedDimension[] = [
@@ -20,13 +20,12 @@ const ALL_NEED_DIMENSIONS: readonly NeedDimension[] = [
 ];
 
 /**
- * A slot only "counts" toward load/need coverage on `klappte`/`so_halb`
- * (`succeeded`/`partial`) — `docs/datenmodell.md`, table „Das Budget
- * speist sich ohne Logbuch"; matches
- * `docs/specs/belastungsbudget.md`, „Nicht dazu gehört".
+ * A slot only "counts" toward load/need coverage on `succeeded`/`partial`
+ * (`docs/datenmodell.md`, table „Das Budget speist sich ohne Logbuch";
+ * matches `docs/specs/belastungsbudget.md`, „Nicht dazu gehört").
  */
-function isCounted(ergebnisGerman: string | null): boolean {
-  return ergebnisGerman === 'klappte' || ergebnisGerman === 'so_halb';
+function isCounted(outcome: string | null): boolean {
+  return outcome === 'succeeded' || outcome === 'partial';
 }
 
 /** Resolves `loadOverLastSevenDays` (step 1 input) from past slot rows. */
@@ -38,10 +37,10 @@ export function resolveDailyLoads(args: {
   const { pastSlots, activityById, today } = args;
   const loadByDate = new Map<string, number>();
   for (const row of pastSlots) {
-    if (row.aktivitaet_id === null) continue;
-    const activity = activityById.get(row.aktivitaet_id);
+    if (row.activity_id === null) continue;
+    const activity = activityById.get(row.activity_id);
     if (activity === undefined) continue;
-    loadByDate.set(row.datum, isCounted(row.ergebnis) ? activity.arousal : 0);
+    loadByDate.set(row.date, isCounted(row.outcome) ? activity.arousal : 0);
   }
 
   const loads: number[] = [];
@@ -58,8 +57,8 @@ export function resolveNeedCoverage(args: {
 }): Map<NeedDimension, number> {
   const coverage = new Map<NeedDimension, number>();
   for (const row of args.previousPeriodSlots) {
-    if (row.aktivitaet_id === null || !isCounted(row.ergebnis)) continue;
-    const activity = args.activityById.get(row.aktivitaet_id);
+    if (row.activity_id === null || !isCounted(row.outcome)) continue;
+    const activity = args.activityById.get(row.activity_id);
     if (activity === undefined) continue;
     for (const dimension of ALL_NEED_DIMENSIONS) {
       const contribution = needFor(activity.needs, dimension);
@@ -88,10 +87,10 @@ export function resolveLastUsed(args: {
   const lastUsedByActivityId = new Map<string, Date>();
 
   for (const row of args.allSlots) {
-    if (row.aktivitaet_id === null) continue;
-    const activity = args.activityById.get(row.aktivitaet_id);
+    if (row.activity_id === null) continue;
+    const activity = args.activityById.get(row.activity_id);
     if (activity === undefined) continue;
-    const date = new Date(row.datum);
+    const date = new Date(row.date);
 
     const previousActivityDate = lastUsedByActivityId.get(activity.id);
     if (previousActivityDate === undefined || date > previousActivityDate) {

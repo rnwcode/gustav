@@ -1,91 +1,89 @@
 -- 0003_rasse.sql
 --
--- Zieht die in docs/produkt.md als "Nicht im MVP" vorgesehenen
--- Rasse-Spezialpfade bewusst vor (Nutzerentscheidung, siehe
--- docs/specs/rasse-modellieren.md): `hund.rassegruppe` wird zur
--- Eigenschaft einer eigenen `rasse`-Tabelle, ein Hund verweist über
--- `hund_rasse` auf eine oder mehrere Rassen. Damit wird der Weg zu
--- echten, einzeln benannten Rassen (statt nur neun Gruppen) später zu
--- reiner Dateneingabe, ohne weitere Schema-Änderung.
+-- Pulls the breed-specific paths flagged "not in MVP" in docs/produkt.md
+-- forward (owner's decision, see docs/specs/rasse-modellieren.md):
+-- `dog.breed_group` becomes a property of its own `breed` table, and a dog
+-- links to one or more breeds via `dog_breed`. That makes the path to real,
+-- individually named breeds (instead of just nine groups) later a matter of
+-- pure data entry, no further schema change.
 --
--- `groessenklasse`/`koerperbau` bleiben bewusst am Hund: sie werden schon
--- heute unabhängig von der Rassegruppe direkt vom Halter angegeben, sind
--- also Eigenschaften des einzelnen Tieres, keine Rasseeigenschaften.
+-- `size_class`/`body_type` deliberately stay on `dog`: they're already
+-- given by the owner independent of breed group today, so they're
+-- properties of the individual animal, not of the breed.
 --
--- `rasse` ist Content (für alle Nutzer identisch), wie `skill`/
--- `aktivitaet` (0002_content.sql): öffentlich lesbar, direkt in der DB
--- gepflegt, kein Import-Skript (CLAUDE.md, Regel 5).
+-- `breed` is content (identical for every user), like `skill`/`activity`
+-- (0002_content.sql): publicly readable, maintained directly in the DB, no
+-- import script (CLAUDE.md, rule 5).
 
--- ── rasse ───────────────────────────────────────────────────────────────────
+-- ── breed ───────────────────────────────────────────────────────────────────
 
-create table rasse (
+create table breed (
   id text primary key,
   name text not null,
-  rassegruppe text not null
-    check (rassegruppe in (
-      'huete', 'jagd', 'begleit', 'herdenschutz', 'terrier',
-      'wind', 'nordisch', 'molosser', 'misch'
+  breed_group text not null
+    check (breed_group in (
+      'herding', 'hunting', 'companion', 'livestockGuardian', 'terrier',
+      'sighthound', 'nordic', 'molosser', 'mixed'
     )),
-  erstellt_am timestamptz not null default now()
+  created_at timestamptz not null default now()
 );
 
-alter table rasse enable row level security;
+alter table breed enable row level security;
 
-create policy "rasse ist oeffentlich lesbar" on rasse
+create policy "breed is publicly readable" on breed
   for select using (true);
 
--- ── hund_rasse ──────────────────────────────────────────────────────────────
+-- ── dog_breed ───────────────────────────────────────────────────────────────
 --
--- gewichtung ist bewusst nullable: null heißt "gleichmäßig verteilt auf
--- alle Rassen dieses Hundes" — ein Mischling mit zwei verknüpften Rassen
--- ohne gesetzte Gewichtung zählt beide zu je 50 %, ohne dass das jemand
--- pflegen muss (resolveBreedGroups(), infra/supabase/functions/
--- generate-plan/rows.ts). Nur absolute Verhältnisse zählen, keine feste
--- Skala — {3, 1} bedeutet dasselbe wie {75, 25}.
+-- weight is deliberately nullable: null means "spread evenly across all of
+-- this dog's breeds" — a mixed-breed dog with two linked breeds and no
+-- weight set counts both at 50%, without anyone having to maintain that
+-- (resolveBreedGroups(), infra/supabase/functions/generate-plan/rows.ts).
+-- Only relative ratios matter, not a fixed scale — {3, 1} means the same as
+-- {75, 25}.
 
-create table hund_rasse (
-  hund_id uuid not null references hund(id) on delete cascade,
-  rasse_id text not null references rasse(id),
-  gewichtung numeric check (gewichtung > 0),
+create table dog_breed (
+  dog_id uuid not null references dog(id) on delete cascade,
+  breed_id text not null references breed(id),
+  weight numeric check (weight > 0),
 
-  primary key (hund_id, rasse_id)
+  primary key (dog_id, breed_id)
 );
 
-alter table hund_rasse enable row level security;
+alter table dog_breed enable row level security;
 
-create policy "eigene hund_rasse" on hund_rasse
+create policy "own dog_breed" on dog_breed
   for all using (
-    exists (select 1 from hund where hund.id = hund_rasse.hund_id and hund.besitzer = auth.uid())
+    exists (select 1 from dog where dog.id = dog_breed.dog_id and dog.owner = auth.uid())
   ) with check (
-    exists (select 1 from hund where hund.id = hund_rasse.hund_id and hund.besitzer = auth.uid())
+    exists (select 1 from dog where dog.id = dog_breed.dog_id and dog.owner = auth.uid())
   );
 
-create index hund_rasse_hund_id_idx on hund_rasse(hund_id);
+create index dog_breed_dog_id_idx on dog_breed(dog_id);
 
--- ── hund ────────────────────────────────────────────────────────────────────
+-- ── dog ─────────────────────────────────────────────────────────────────────
 
-alter table hund drop column rassegruppe;
+alter table dog drop column breed_group;
 
--- Beide nullable: "unbekannt" ist ein legitimer Zustand, gerade bei
--- Tierschutzhunden ohne Papiere.
-alter table hund add column geschlecht text check (geschlecht in ('ruede', 'huendin'));
-alter table hund add column kastriert bool;
+-- Both nullable: "unknown" is a legitimate state, especially for shelter
+-- dogs without papers.
+alter table dog add column gender text check (gender in ('male', 'female'));
+alter table dog add column neutered bool;
 
--- ── neun Gruppen-Platzhalter ─────────────────────────────────────────────────
+-- ── nine group placeholders ──────────────────────────────────────────────────
 --
--- Damit das Onboarding (dieselbe Rassegruppen-Auswahl wie bisher,
--- Step2Origin.tsx) unverändert weiterläuft. Echte, einzeln benannte
--- Rassen sind Fachwissen über korrekte Gruppen-Zuordnung, keine
--- Engineering-Arbeit — bleiben bewusst offen (docs/specs/
--- rasse-modellieren.md, "Nicht dazu gehört").
+-- So onboarding (same breed-group picker as before, Step2Origin.tsx) keeps
+-- working unchanged. Real, individually named breeds are trainer knowledge
+-- about correct group assignment, not engineering work — deliberately left
+-- open (docs/specs/rasse-modellieren.md, "Nicht dazu gehört").
 
-insert into rasse (id, name, rassegruppe) values
-  ('gruppe_huete', 'Hüte', 'huete'),
-  ('gruppe_jagd', 'Jagd', 'jagd'),
-  ('gruppe_begleit', 'Begleit', 'begleit'),
-  ('gruppe_herdenschutz', 'Herdenschutz', 'herdenschutz'),
-  ('gruppe_terrier', 'Terrier', 'terrier'),
-  ('gruppe_wind', 'Wind', 'wind'),
-  ('gruppe_nordisch', 'Nordisch', 'nordisch'),
-  ('gruppe_molosser', 'Molosser', 'molosser'),
-  ('gruppe_misch', 'Mischling', 'misch');
+insert into breed (id, name, breed_group) values
+  ('group_herding', 'Hüte', 'herding'),
+  ('group_hunting', 'Jagd', 'hunting'),
+  ('group_companion', 'Begleit', 'companion'),
+  ('group_livestock_guardian', 'Herdenschutz', 'livestockGuardian'),
+  ('group_terrier', 'Terrier', 'terrier'),
+  ('group_sighthound', 'Wind', 'sighthound'),
+  ('group_nordic', 'Nordisch', 'nordic'),
+  ('group_molosser', 'Molosser', 'molosser'),
+  ('group_mixed', 'Mischling', 'mixed');

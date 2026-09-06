@@ -122,12 +122,29 @@ Fachvokabular für Hundetrainerinnen und Nutzer, keine Entwicklungssprache.
 `docs/` (Produkt- und Prozessdokumentation, inklusive `docs/specs/`) bleibt
 ebenfalls Deutsch — das sind Texte für Menschen im Projekt, kein Code.
 
-**Spätere Mehrsprachigkeit mitdenken:** `id`-Felder im Content sind bereits
-sprachneutrale Slugs, keine deutschen Wörter — daran ändert sich nichts.
-Nutzersichtbare Textfelder (`titel`, `satz`, `beschreibung`, Rahmentexte
-usw.) sind die Stellen, die später pro Locale dazukommen. Kein Schema dafür
-vorab bauen — nur beim Content-Schema keine Annahme treffen, die eine
-spätere Übersetzung erschwert (z. B. Text nicht mit Fachdaten vermischen).
+**Mehrsprachigkeit ist im Content-Schema vorbereitet.** `id`-Felder im
+Content sind sprachneutrale Slugs, keine deutschen Wörter. Nutzersichtbare
+Textfelder von `skill`/`activity` (`title`, `sentence`, `instructions`,
+`success_criterion`, `common_mistakes`, `troubleshooting` bzw. `name`,
+`description`) stehen deshalb nicht auf diesen Tabellen selbst, sondern in
+je einer `skill_text`/`activity_text`-Tabelle, keyed by `(id, locale)`
+(`infra/supabase/migrations/0002_content.sql`). Bislang gibt es nur
+`locale = 'de'` — eine weitere Sprache ist reine Dateneingabe (zusätzliche
+Zeilen), kein Schema-Umbau. `generate-plan` joint beim Lesen fest gegen
+`locale = 'de'`; eine spätere Sprachauswahl setzt an genau dieser einen
+Stelle an (`generate-plan/README.md`). Für App-seitige UI-Texte (Screens,
+Labels) gilt dasselbe Prinzip noch nicht — dafür gibt es noch keine
+i18n-Bibliothek in der App, das ist ein eigenes, noch nicht begonnenes
+Stück Arbeit.
+
+**Tabellen-/Spaltennamen und strukturelle Enum-Werte sind Englisch, wie der
+übrige Code** (`dog`, `household`, `weekly_plan`, `origin`, `size_class`
+usw., `infra/supabase/migrations/`) — das war zu Projektbeginn bewusst
+anders (Fachvokabular direkt in der DB), wurde aber auf Wunsch umgestellt,
+damit Schema und Code eine einzige, durchgängige Sprache sprechen. Einzige
+Ausnahme bleibt der oben beschriebene Content: die tatsächlichen Text- und
+Konfigurationswerte in `skill_text`/`activity_text` und `planner_config`
+(`content/planer.yaml`, CLAUDE.md Regel 6) sind und bleiben Deutsch.
 
 ## Tonalität der nutzersichtbaren Texte
 

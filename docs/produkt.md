@@ -36,7 +36,8 @@ zweite Sprache. Alles davon ist im Datenmodell vorgesehen (siehe
 100 zahlenden Kunden gebaut.
 
 **Rasse statt Rassegruppe ist vorgezogen** (`docs/specs/rasse-modellieren.md`):
-Eine eigene `rasse`-Tabelle trägt die Rassegruppe, ein Hund kann mehrere
+Eine eigene `breed`-Tabelle (ehemals `rasse`, seit der Umstellung auf
+englische Tabellennamen) trägt die Rassegruppe, ein Hund kann mehrere
 Rassen verknüpfen (Mischling, gewichtet). Echte, einzeln benannte Rassen
 sind trotzdem noch nicht befüllt — nur neun Gruppen-Platzhalter — weil das
 Fachwissen erfordert, keine Engineering-Arbeit. Die Scope-Grenze war

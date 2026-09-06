@@ -2,26 +2,26 @@
 // (and once, right after onboarding, with an empty check-in) to get a new
 // WeeklyPlan for one dog.
 //
-// ── Katalog: aktivitaet/skill (Postgres) ────────────────────────────────────
+// ── Catalog: activity/skill (Postgres) ──────────────────────────────────────
 //
-// Skills/Aktivitäten kommen aus den Tabellen `aktivitaet`/`skill`
-// (infra/supabase/migrations/0002_content.sql) — nicht mehr aus
-// `_shared/planner/fixtures/`, die weiterhin nur Simulator und Tests
-// bedienen (docs/specs/content-aus-db-laden.md). Direkt in der DB
-// gepflegt (CLAUDE.md, Regel 5); `infra/supabase/seed/{skill,aktivitaet}.sql`
-// bootstrapt eine lokale/gehostete DB aus `content/import/*.csv` (siehe
-// dortige READMEs für Herkunft und Einschränkungen der Daten).
+// Skills/activities come from the `activity`/`skill` tables
+// (infra/supabase/migrations/0002_content.sql) — not from
+// `_shared/planner/fixtures/`, which continues to serve only the simulator
+// and tests (docs/specs/content-aus-db-laden.md). Maintained directly in
+// the DB (CLAUDE.md, rule 5); `infra/supabase/seed/{skill,activity}.sql`
+// bootstraps a local/hosted DB from `content/import/*.csv` (see the READMEs
+// there for the data's origin and limitations).
 //
-// ── Konfiguration: planer_konfig (Postgres) ─────────────────────────────────
+// ── Configuration: planner_config (Postgres) ────────────────────────────────
 //
-// content/planer.yaml kommt jetzt aus der Tabelle `planer_konfig`
-// (infra/supabase/migrations/0004_planer_konfig.sql) statt per Dateisystem-
-// zugriff: ein `supabase functions deploy`-Bundle enthält kein content/
-// mehr, der bisherige Datei-Read schlug nach jedem echten Deploy mit
-// `NotFound: /var/content/planer.yaml` fehl (nur unter `supabase functions
-// serve`, das aus dem Checkout heraus läuft, funktionierte er). Gelesen
-// wird immer die höchste `version` — die Werte selbst ändert kein Agent
-// eigenmächtig (CLAUDE.md, Regel 6).
+// content/planer.yaml now comes from the `planner_config` table
+// (infra/supabase/migrations/0004_planer_konfig.sql) instead of filesystem
+// access: a `supabase functions deploy` bundle contains no content/
+// anymore, the previous file read failed after every real deploy with
+// `NotFound: /var/content/planer.yaml` (only under `supabase functions
+// serve`, which runs from the checkout, did it work). Always reads the
+// highest `version` — the values themselves are never changed by an agent
+// on its own (CLAUDE.md, rule 6).
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { FakeClock, systemClock } from '../_shared/planner/clock.ts';
@@ -31,32 +31,32 @@ import {
   parsePlanerConfigYaml,
   parseStateMachineConfigYaml,
 } from '../_shared/content/planer_yaml.ts';
-import { germanForWeekday, germanForWeeklyContextSource } from '../_shared/content/german_enums.ts';
 import {
   activityFromRow,
   dogFromRow,
   householdFromRow,
+  reasonJsonFromReason,
   skillFromRow,
-  skillStandRowFromState,
   skillStateFromRow,
+  skillStateRowFromState,
   slotRowFromSlot,
   toDateString,
 } from './rows.ts';
 import { resolveDailyLoads, resolveLastUsed, resolveNeedCoverage } from './history.ts';
 import type { PastSlotRow } from './history.ts';
-import { applyRueckblick } from './rueckblick.ts';
-import type { RatedSlotRow, RueckblickEntry } from './rueckblick.ts';
+import { applyReview } from './review.ts';
+import type { RatedSlotRow, ReviewEntry } from './review.ts';
 import { translateCheckin } from './checkin_translator.ts';
 
 interface RequestBody {
-  readonly hundId: string;
-  readonly rueckblick?: readonly RueckblickEntry[];
-  readonly freitextRueckblick?: string | null;
-  readonly absichtChips?: readonly string[];
-  readonly freitextAbsicht?: string | null;
-  readonly tageVerfuegbar?: readonly string[];
-  readonly rueckblickChips?: readonly string[];
-  /** Nur für die Zeitreise im Debug-Menü (apps/README.md) — sonst weggelassen. */
+  readonly dogId: string;
+  readonly review?: readonly ReviewEntry[];
+  readonly reviewFreetext?: string | null;
+  readonly intentChips?: readonly string[];
+  readonly intentFreetext?: string | null;
+  readonly daysAvailable?: readonly string[];
+  readonly reviewChips?: readonly string[];
+  /** Only for the debug menu's time travel (apps/README.md) — otherwise omitted. */
   readonly debugToday?: string;
 }
 
@@ -83,8 +83,8 @@ Deno.serve(async (req: Request) => {
   } catch {
     return jsonResponse({ error: 'invalid_json' }, 400);
   }
-  if (typeof body.hundId !== 'string' || body.hundId.length === 0) {
-    return jsonResponse({ error: 'hundId_required' }, 400);
+  if (typeof body.dogId !== 'string' || body.dogId.length === 0) {
+    return jsonResponse({ error: 'dogId_required' }, 400);
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -99,106 +99,112 @@ Deno.serve(async (req: Request) => {
   }
   const userId = userData.user.id;
 
-  // RLS lässt hund/haushalt ohnehin nur die eigenen Zeilen sehen — die
-  // .eq()-Filter hier sind defensiv, keine zusätzliche Autorisierung.
-  const { data: hundRow, error: hundError } = await supabase
-    .from('hund')
+  // RLS already lets a user see only their own dog/household rows — the
+  // .eq() filters here are defensive, not additional authorization.
+  const { data: dogRow, error: dogError } = await supabase
+    .from('dog')
     .select('*')
-    .eq('id', body.hundId)
+    .eq('id', body.dogId)
     .maybeSingle();
-  if (hundError) {
-    return jsonResponse({ error: 'hund_query_failed', detail: hundError.message }, 500);
+  if (dogError) {
+    return jsonResponse({ error: 'dog_query_failed', detail: dogError.message }, 500);
   }
-  if (hundRow === null) return jsonResponse({ error: 'hund_not_found' }, 404);
+  if (dogRow === null) return jsonResponse({ error: 'dog_not_found' }, 404);
 
-  const { data: hundRasseRows, error: hundRasseError } = await supabase
-    .from('hund_rasse')
-    .select('gewichtung, rasse:rasse_id(rassegruppe)')
-    .eq('hund_id', body.hundId);
-  if (hundRasseError) {
+  const { data: dogBreedRows, error: dogBreedError } = await supabase
+    .from('dog_breed')
+    .select('weight, breed:breed_id(breed_group)')
+    .eq('dog_id', body.dogId);
+  if (dogBreedError) {
     return jsonResponse(
-      { error: 'hund_rasse_query_failed', detail: hundRasseError.message },
+      { error: 'dog_breed_query_failed', detail: dogBreedError.message },
       500,
     );
   }
 
-  const { data: haushaltRow, error: haushaltError } = await supabase
-    .from('haushalt')
+  const { data: householdRow, error: householdError } = await supabase
+    .from('household')
     .select('*')
-    .eq('besitzer', userId)
+    .eq('owner', userId)
     .maybeSingle();
-  if (haushaltError) {
-    return jsonResponse({ error: 'haushalt_query_failed', detail: haushaltError.message }, 500);
+  if (householdError) {
+    return jsonResponse({ error: 'household_query_failed', detail: householdError.message }, 500);
   }
-  if (haushaltRow === null) return jsonResponse({ error: 'haushalt_not_found' }, 404);
+  if (householdRow === null) return jsonResponse({ error: 'household_not_found' }, 404);
 
   const clock = resolveClock(body);
   const today = clock.today();
 
   const { data: previousPlanRow, error: previousPlanError } = await supabase
-    .from('wochenplan')
-    .select('id, periode_start, periode_ende')
-    .eq('hund_id', body.hundId)
-    .order('periode_start', { ascending: false })
+    .from('weekly_plan')
+    .select('id, period_start, period_end')
+    .eq('dog_id', body.dogId)
+    .order('period_start', { ascending: false })
     .limit(1)
     .maybeSingle();
   if (previousPlanError) {
     return jsonResponse(
-      { error: 'wochenplan_query_failed', detail: previousPlanError.message },
+      { error: 'weekly_plan_query_failed', detail: previousPlanError.message },
       500,
     );
   }
-  if (previousPlanRow !== null && previousPlanRow.periode_ende >= toDateString(today)) {
+  if (previousPlanRow !== null && previousPlanRow.period_end >= toDateString(today)) {
     return jsonResponse(
-      { error: 'period_still_active', wochenplanId: previousPlanRow.id },
+      { error: 'period_still_active', weeklyPlanId: previousPlanRow.id },
       409,
     );
   }
 
   const { data: allPlanRows, error: allPlanRowsError } = await supabase
-    .from('wochenplan')
+    .from('weekly_plan')
     .select('id')
-    .eq('hund_id', body.hundId);
+    .eq('dog_id', body.dogId);
   if (allPlanRowsError) {
     return jsonResponse(
-      { error: 'wochenplan_query_failed', detail: allPlanRowsError.message },
+      { error: 'weekly_plan_query_failed', detail: allPlanRowsError.message },
       500,
     );
   }
   const allPlanIds = (allPlanRows ?? []).map((row) => row.id as string);
 
-  let allSlotRows: (PastSlotRow & { id: string; wochenplan_id: string })[] = [];
+  let allSlotRows: (PastSlotRow & { id: string; weekly_plan_id: string })[] = [];
   if (allPlanIds.length > 0) {
     const { data, error } = await supabase
       .from('slot')
-      .select('id, wochenplan_id, datum, aktivitaet_id, ergebnis')
-      .in('wochenplan_id', allPlanIds);
+      .select('id, weekly_plan_id, date, activity_id, outcome')
+      .in('weekly_plan_id', allPlanIds);
     if (error) return jsonResponse({ error: 'slot_query_failed', detail: error.message }, 500);
     allSlotRows = data ?? [];
   }
 
-  const { data: skillStandRows, error: skillStandError } = await supabase
-    .from('skill_stand')
+  const { data: skillStateRows, error: skillStateError } = await supabase
+    .from('skill_state')
     .select('*')
-    .eq('hund_id', body.hundId);
-  if (skillStandError) {
+    .eq('dog_id', body.dogId);
+  if (skillStateError) {
     return jsonResponse(
-      { error: 'skill_stand_query_failed', detail: skillStandError.message },
+      { error: 'skill_state_query_failed', detail: skillStateError.message },
       500,
     );
   }
 
-  // Öffentlich lesbarer Content (RLS: "aktivitaet/skill ist oeffentlich
-  // lesbar") — kein Bezug zu body.hundId nötig.
-  const { data: skillRows, error: skillCatalogError } = await supabase.from('skill').select('*');
+  // Publicly readable content (RLS: "activity/skill is publicly readable")
+  // — no relation to body.dogId needed. Text comes fixed from locale = 'de'
+  // (0002_content.sql) — the client doesn't send a language today, this is
+  // the one spot a later locale picker would plug into.
+  const CONTENT_LOCALE = 'de';
+  const { data: skillRows, error: skillCatalogError } = await supabase.from('skill')
+    .select('*, skill_text!inner(*)')
+    .eq('skill_text.locale', CONTENT_LOCALE);
   if (skillCatalogError) {
     return jsonResponse(
       { error: 'skill_catalog_query_failed', detail: skillCatalogError.message },
       500,
     );
   }
-  const { data: activityRows, error: activityCatalogError } = await supabase.from('aktivitaet')
-    .select('*');
+  const { data: activityRows, error: activityCatalogError } = await supabase.from('activity')
+    .select('*, activity_text!inner(*)')
+    .eq('activity_text.locale', CONTENT_LOCALE);
   if (activityCatalogError) {
     return jsonResponse(
       { error: 'activity_catalog_query_failed', detail: activityCatalogError.message },
@@ -206,83 +212,91 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const breeds = (hundRasseRows ?? []).map((row) => ({
-    rassegruppe: (row.rasse as unknown as { rassegruppe: string }).rassegruppe,
-    gewichtung: row.gewichtung as number | null,
+  const breeds = (dogBreedRows ?? []).map((row) => ({
+    breed_group: (row.breed as unknown as { breed_group: string }).breed_group,
+    weight: row.weight as number | null,
   }));
-  const dog = dogFromRow(hundRow, breeds);
-  const household = householdFromRow(haushaltRow);
+  // dogFromRow → resolveBreedGroups (rows.ts) throws on an empty list — a
+  // real, reachable state if the onboarding's dog_breed insert ever failed
+  // partway through (onboardingRepository.createDog). Catching it here turns
+  // an unhandled exception (opaque 500, no plan ever generated) into a
+  // diagnosable error instead of a silent dead end.
+  if (breeds.length === 0) {
+    return jsonResponse({ error: 'dog_breed_missing' }, 500);
+  }
+  const dog = dogFromRow(dogRow, breeds);
+  const household = householdFromRow(householdRow);
   const activityCatalog = (activityRows ?? []).map(activityFromRow);
   const skillCatalog = (skillRows ?? []).map(skillFromRow);
   const activityById = new Map(activityCatalog.map((a) => [a.id, a]));
   const skillById = new Map(skillCatalog.map((s) => [s.id, s]));
 
   const skillStates = new Map(
-    (skillStandRows ?? []).map((
+    (skillStateRows ?? []).map((
       row,
-    ) => [row.skill_id as string, skillStateFromRow(row, body.hundId)]),
+    ) => [row.skill_id as string, skillStateFromRow(row, body.dogId)]),
   );
 
   const previousPeriodSlots = previousPlanRow === null
     ? []
-    : allSlotRows.filter((row) => row.wochenplan_id === previousPlanRow.id);
+    : allSlotRows.filter((row) => row.weekly_plan_id === previousPlanRow.id);
 
-  const rueckblickEntries = body.rueckblick ?? [];
+  const reviewEntries = body.review ?? [];
   const slotsById = new Map<string, RatedSlotRow>(
     previousPeriodSlots.map((
       row,
-    ) => [row.id, { id: row.id, datum: row.datum, aktivitaet_id: row.aktivitaet_id }]),
+    ) => [row.id, { id: row.id, date: row.date, activity_id: row.activity_id }]),
   );
 
-  const { data: planerKonfigRow, error: planerKonfigError } = await supabase
-    .from('planer_konfig')
-    .select('konfig')
+  const { data: plannerConfigRow, error: plannerConfigError } = await supabase
+    .from('planner_config')
+    .select('config')
     .order('version', { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (planerKonfigError) {
+  if (plannerConfigError) {
     return jsonResponse(
-      { error: 'planer_konfig_query_failed', detail: planerKonfigError.message },
+      { error: 'planner_config_query_failed', detail: plannerConfigError.message },
       500,
     );
   }
-  if (planerKonfigRow === null) return jsonResponse({ error: 'planer_konfig_missing' }, 500);
-  const plannerConfig = parsePlanerConfigYaml(planerKonfigRow.konfig);
-  const stateMachineConfig = parseStateMachineConfigYaml(planerKonfigRow.konfig);
+  if (plannerConfigRow === null) return jsonResponse({ error: 'planner_config_missing' }, 500);
+  const plannerConfig = parsePlanerConfigYaml(plannerConfigRow.config);
+  const stateMachineConfig = parseStateMachineConfigYaml(plannerConfigRow.config);
 
-  const { updatedSkillStates, slotErgebnisUpdates } = applyRueckblick({
-    entries: rueckblickEntries,
+  const { updatedSkillStates, slotOutcomeUpdates } = applyReview({
+    entries: reviewEntries,
     slotsById,
     activityById,
     skillById,
     skillStates,
     stateMachineConfig,
-    dogId: body.hundId,
+    dogId: body.dogId,
   });
 
-  for (const update of slotErgebnisUpdates) {
+  for (const update of slotOutcomeUpdates) {
     const { error } = await supabase
       .from('slot')
-      .update({ ergebnis: update.ergebnis })
+      .update({ outcome: update.outcome })
       .eq('id', update.slotId);
     if (error) return jsonResponse({ error: 'slot_update_failed', detail: error.message }, 500);
   }
 
   if (updatedSkillStates.size > 0) {
     const rows = [...updatedSkillStates.values()].map((state) =>
-      skillStandRowFromState(body.hundId, state)
+      skillStateRowFromState(body.dogId, state)
     );
-    const { error } = await supabase.from('skill_stand').upsert(rows, {
-      onConflict: 'hund_id,skill_id',
+    const { error } = await supabase.from('skill_state').upsert(rows, {
+      onConflict: 'dog_id,skill_id',
     });
     if (error) {
-      return jsonResponse({ error: 'skill_stand_upsert_failed', detail: error.message }, 500);
+      return jsonResponse({ error: 'skill_state_upsert_failed', detail: error.message }, 500);
     }
   }
 
   const weeklyContext = translateCheckin({
-    absichtChips: body.absichtChips ?? [],
-    tageVerfuegbar: body.tageVerfuegbar ?? [],
+    intentChips: body.intentChips ?? [],
+    daysAvailable: body.daysAvailable ?? [],
   });
 
   const loadOverLastSevenDays = resolveDailyLoads({ pastSlots: allSlotRows, activityById, today });
@@ -310,21 +324,21 @@ Deno.serve(async (req: Request) => {
   const { data: checkinRow, error: checkinError } = await supabase
     .from('checkin')
     .insert({
-      hund_id: body.hundId,
-      periode_start: toDateString(today),
-      rueckblick: rueckblickEntries.map((e) => ({ slot_id: e.slotId, ergebnis: e.ergebnis })),
-      freitext_rueckblick: body.freitextRueckblick ?? null,
-      absicht_chips: body.absichtChips ?? [],
-      freitext_absicht: body.freitextAbsicht ?? null,
-      tage_verfuegbar: body.tageVerfuegbar ?? [],
-      rueckblick_chips: body.rueckblickChips ?? [],
-      prioritaeten: weeklyContext.priorities.map((p) => ({
-        skill_id_oder_thema: p.skillIdOrTopic,
-        gewicht: p.weight,
+      dog_id: body.dogId,
+      period_start: toDateString(today),
+      review: reviewEntries.map((e) => ({ slot_id: e.slotId, outcome: e.outcome })),
+      review_freetext: body.reviewFreetext ?? null,
+      intent_chips: body.intentChips ?? [],
+      intent_freetext: body.intentFreetext ?? null,
+      days_available: body.daysAvailable ?? [],
+      review_chips: body.reviewChips ?? [],
+      priorities: weeklyContext.priorities.map((p) => ({
+        skillIdOrTopic: p.skillIdOrTopic,
+        weight: p.weight,
       })),
-      constraints_tage: [...weeklyContext.constraints.days].map(germanForWeekday),
+      constraint_days: [...weeklyContext.constraints.days],
       flags: [...weeklyContext.flags],
-      quelle: germanForWeeklyContextSource(weeklyContext.source),
+      source: weeklyContext.source,
     })
     .select('id')
     .single();
@@ -332,43 +346,43 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'checkin_insert_failed', detail: checkinError.message }, 500);
   }
 
-  const { data: wochenplanRow, error: wochenplanInsertError } = await supabase
-    .from('wochenplan')
+  const { data: weeklyPlanRow, error: weeklyPlanInsertError } = await supabase
+    .from('weekly_plan')
     .insert({
-      hund_id: body.hundId,
+      dog_id: body.dogId,
       checkin_id: checkinRow.id,
-      periode_start: toDateString(result.periodStart),
-      periode_ende: toDateString(result.periodEnd),
-      algorithmus_version: result.algorithmVersion,
-      konfig_version: result.configVersion,
+      period_start: toDateString(result.periodStart),
+      period_end: toDateString(result.periodEnd),
+      algorithm_version: result.algorithmVersion,
+      config_version: result.configVersion,
     })
     .select('id')
     .single();
-  if (wochenplanInsertError) {
+  if (weeklyPlanInsertError) {
     return jsonResponse({
-      error: 'wochenplan_insert_failed',
-      detail: wochenplanInsertError.message,
+      error: 'weekly_plan_insert_failed',
+      detail: weeklyPlanInsertError.message,
     }, 500);
   }
 
-  const slotRows = result.slots.map((slot) => slotRowFromSlot(wochenplanRow.id, slot));
+  const slotRows = result.slots.map((slot) => slotRowFromSlot(weeklyPlanRow.id, slot));
   const { error: slotInsertError } = await supabase.from('slot').insert(slotRows);
   if (slotInsertError) {
     return jsonResponse({ error: 'slot_insert_failed', detail: slotInsertError.message }, 500);
   }
 
   return jsonResponse({
-    wochenplanId: wochenplanRow.id,
-    periodeStart: toDateString(result.periodStart),
-    periodeEnde: toDateString(result.periodEnd),
-    algorithmusVersion: result.algorithmVersion,
-    konfigVersion: result.configVersion,
+    weeklyPlanId: weeklyPlanRow.id,
+    periodStart: toDateString(result.periodStart),
+    periodEnd: toDateString(result.periodEnd),
+    algorithmVersion: result.algorithmVersion,
+    configVersion: result.configVersion,
     slots: result.slots.map((slot) => ({
-      datum: toDateString(slot.date),
-      aktivitaetId: slot.activityId,
-      titel: slot.activityId === null ? null : activityById.get(slot.activityId)?.title ?? null,
-      satz: slot.activityId === null ? null : activityById.get(slot.activityId)?.sentence ?? null,
-      begruendung: slot.reason,
+      date: toDateString(slot.date),
+      activityId: slot.activityId,
+      title: slot.activityId === null ? null : activityById.get(slot.activityId)?.title ?? null,
+      sentence: slot.activityId === null ? null : activityById.get(slot.activityId)?.sentence ?? null,
+      reason: reasonJsonFromReason(slot.reason),
     })),
   }, 201);
 });

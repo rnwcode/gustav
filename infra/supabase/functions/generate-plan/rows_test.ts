@@ -3,26 +3,27 @@ import {
   activityFromRow,
   dogFromRow,
   householdFromRow,
+  reasonJsonFromReason,
   resolveBreedGroups,
   skillFromRow,
-  skillStandRowFromState,
   skillStateFromRow,
+  skillStateRowFromState,
   slotRowFromSlot,
 } from './rows.ts';
 
-Deno.test('dogFromRow maps a hund row onto Dog, breed group from the linked rasse', () => {
+Deno.test('dogFromRow maps a dog row onto Dog, breed group from the linked breed', () => {
   const dog = dogFromRow({
     id: 'dog-1',
     name: 'Gustav',
-    geburtsdatum: '2023-01-01',
-    einzugsdatum: '2023-01-15',
-    herkunft: 'zuechter',
-    groessenklasse: 'mittel',
-    koerperbau: ['brachyzephal'],
-    einschraenkungen: ['schonung'],
-    geschlecht: 'ruede',
-    kastriert: true,
-  }, [{ rassegruppe: 'huete', gewichtung: null }]);
+    birth_date: '2023-01-01',
+    arrival_date: '2023-01-15',
+    origin: 'breeder',
+    size_class: 'medium',
+    body_type: ['brachycephalic'],
+    restrictions: ['protectiveCare'],
+    gender: 'male',
+    neutered: true,
+  }, [{ breed_group: 'herding', weight: null }]);
 
   assertEquals(dog.id, 'dog-1');
   assertEquals(dog.birthDate, new Date('2023-01-01'));
@@ -40,45 +41,45 @@ Deno.test('dogFromRow tolerates unknown gender/neutered status', () => {
   const dog = dogFromRow({
     id: 'dog-1',
     name: 'Gustav',
-    geburtsdatum: '2023-01-01',
-    einzugsdatum: '2023-01-15',
-    herkunft: 'zuechter',
-    groessenklasse: 'mittel',
-    koerperbau: [],
-    einschraenkungen: [],
-    geschlecht: null,
-    kastriert: null,
-  }, [{ rassegruppe: 'misch', gewichtung: null }]);
+    birth_date: '2023-01-01',
+    arrival_date: '2023-01-15',
+    origin: 'breeder',
+    size_class: 'medium',
+    body_type: [],
+    restrictions: [],
+    gender: null,
+    neutered: null,
+  }, [{ breed_group: 'mixed', weight: null }]);
 
   assertEquals(dog.gender, null);
   assertEquals(dog.neutered, null);
 });
 
 Deno.test('resolveBreedGroups: one breed, no weight needed', () => {
-  const groups = resolveBreedGroups([{ rassegruppe: 'huete', gewichtung: null }]);
+  const groups = resolveBreedGroups([{ breed_group: 'herding', weight: null }]);
   assertEquals(groups, new Map([['herding', 1]]));
 });
 
 Deno.test('resolveBreedGroups: two breeds without an explicit weight split evenly', () => {
   const groups = resolveBreedGroups([
-    { rassegruppe: 'huete', gewichtung: null },
-    { rassegruppe: 'jagd', gewichtung: null },
+    { breed_group: 'herding', weight: null },
+    { breed_group: 'hunting', weight: null },
   ]);
   assertEquals(groups, new Map([['herding', 0.5], ['hunting', 0.5]]));
 });
 
 Deno.test('resolveBreedGroups: an explicit weight ratio overrides the even split', () => {
   const groups = resolveBreedGroups([
-    { rassegruppe: 'huete', gewichtung: 3 },
-    { rassegruppe: 'jagd', gewichtung: 1 },
+    { breed_group: 'herding', weight: 3 },
+    { breed_group: 'hunting', weight: 1 },
   ]);
   assertEquals(groups, new Map([['herding', 0.75], ['hunting', 0.25]]));
 });
 
 Deno.test('resolveBreedGroups: two breeds in the same group merge into one weight', () => {
   const groups = resolveBreedGroups([
-    { rassegruppe: 'huete', gewichtung: null },
-    { rassegruppe: 'huete', gewichtung: null },
+    { breed_group: 'herding', weight: null },
+    { breed_group: 'herding', weight: null },
   ]);
   assertEquals(groups, new Map([['herding', 1]]));
 });
@@ -87,19 +88,19 @@ Deno.test('resolveBreedGroups: no linked breed is a data error', () => {
   assertThrows(() => resolveBreedGroups([]));
 });
 
-Deno.test('householdFromRow maps a haushalt row onto Household', () => {
+Deno.test('householdFromRow maps a household row onto Household', () => {
   const household = householdFromRow({
     id: 'household-1',
-    plz: '10115',
-    wohnsituation: 'wohnung',
-    umgebung: 'stadt',
-    erfahrung: 'erfahren',
-    zeitbudget_werktag_min: 30,
-    zeitbudget_wochenende_min: 60,
-    trainingstage: ['mo', 'mi', 'fr'],
-    planungstag: 'so',
-    personen: 1,
-    equipment: ['leine'],
+    postal_code: '10115',
+    housing_type: 'apartment',
+    surroundings: 'city',
+    experience: 'experienced',
+    weekday_time_budget_min: 30,
+    weekend_time_budget_min: 60,
+    training_days: ['monday', 'wednesday', 'friday'],
+    planning_day: 'sunday',
+    household_size: 1,
+    equipment: ['leash'],
   });
 
   assertEquals(household.postalCode, '10115');
@@ -108,28 +109,28 @@ Deno.test('householdFromRow maps a haushalt row onto Household', () => {
   assertEquals(household.experience, 'experienced');
   assertEquals(household.trainingDays, new Set(['monday', 'wednesday', 'friday']));
   assertEquals(household.planningDay, 'sunday');
-  assertEquals(household.equipment, ['leine']);
+  assertEquals(household.equipment, ['leash']);
 });
 
 Deno.test('skillStateFromRow decodes the JSON history', () => {
   const state = skillStateFromRow({
-    skill_id: 'rueckruf',
-    status: 'generalisierung',
-    stufe_dauer: 1,
-    stufe_distanz: 2,
-    stufe_ablenkung: 3,
-    historie: [
+    skill_id: 'recall',
+    status: 'generalizing',
+    level_duration: 1,
+    level_distance: 2,
+    level_distraction: 3,
+    history: [
       {
-        datum: '2026-03-01',
-        ergebnis: 'klappte',
-        stufe_dauer: 1,
-        stufe_distanz: 2,
-        stufe_ablenkung: 2,
+        date: '2026-03-01',
+        outcome: 'succeeded',
+        levelDuration: 1,
+        levelDistance: 2,
+        levelDistraction: 2,
       },
     ],
-    letzte_uebung_am: '2026-03-01',
-    faellig_am: '2026-03-10',
-    intervall_tage: 9,
+    last_practiced_at: '2026-03-01',
+    due_at: '2026-03-10',
+    interval_days: 9,
   }, 'dog-1');
 
   assertEquals(state.dogId, 'dog-1');
@@ -147,15 +148,15 @@ Deno.test('skillStateFromRow decodes the JSON history', () => {
 
 Deno.test('skillStateFromRow tolerates a null history (never practiced)', () => {
   const state = skillStateFromRow({
-    skill_id: 'rueckruf',
-    status: 'aufbau',
-    stufe_dauer: 0,
-    stufe_distanz: 0,
-    stufe_ablenkung: 0,
-    historie: null,
-    letzte_uebung_am: null,
-    faellig_am: null,
-    intervall_tage: 1,
+    skill_id: 'recall',
+    status: 'building',
+    level_duration: 0,
+    level_distance: 0,
+    level_distraction: 0,
+    history: null,
+    last_practiced_at: null,
+    due_at: null,
+    interval_days: 1,
   }, 'dog-1');
 
   assertEquals(state.history, []);
@@ -163,30 +164,30 @@ Deno.test('skillStateFromRow tolerates a null history (never practiced)', () => 
   assertEquals(state.dueAt, null);
 });
 
-Deno.test('skillStandRowFromState round-trips through skillStateFromRow', () => {
+Deno.test('skillStateRowFromState round-trips through skillStateFromRow', () => {
   const original = skillStateFromRow({
-    skill_id: 'rueckruf',
-    status: 'generalisierung',
-    stufe_dauer: 1,
-    stufe_distanz: 2,
-    stufe_ablenkung: 3,
-    historie: [
+    skill_id: 'recall',
+    status: 'generalizing',
+    level_duration: 1,
+    level_distance: 2,
+    level_distraction: 3,
+    history: [
       {
-        datum: '2026-03-01',
-        ergebnis: 'klappte',
-        stufe_dauer: 1,
-        stufe_distanz: 2,
-        stufe_ablenkung: 2,
+        date: '2026-03-01',
+        outcome: 'succeeded',
+        levelDuration: 1,
+        levelDistance: 2,
+        levelDistraction: 2,
       },
     ],
-    letzte_uebung_am: '2026-03-01',
-    faellig_am: '2026-03-10',
-    intervall_tage: 9,
+    last_practiced_at: '2026-03-01',
+    due_at: '2026-03-10',
+    interval_days: 9,
   }, 'dog-1');
 
-  const row = skillStandRowFromState('dog-1', original);
+  const row = skillStateRowFromState('dog-1', original);
   const roundTripped = skillStateFromRow(
-    { ...row, historie: row.historie },
+    { ...row, history: row.history },
     'dog-1',
   );
   assertEquals(roundTripped, original);
@@ -200,13 +201,13 @@ Deno.test('slotRowFromSlot maps an empty slot', () => {
     outcome: null,
   });
   assertEquals(row, {
-    wochenplan_id: 'plan-1',
-    datum: '2026-03-16',
-    aktivitaet_id: null,
-    begruendung_art: 'leer',
-    begruendung_skill_id: null,
-    begruendung_bedarfsdimension: null,
-    ergebnis: null,
+    weekly_plan_id: 'plan-1',
+    date: '2026-03-16',
+    activity_id: null,
+    reason_kind: 'empty',
+    reason_skill_id: null,
+    reason_need_dimension: null,
+    outcome: null,
   });
 });
 
@@ -217,76 +218,92 @@ Deno.test('slotRowFromSlot maps a need-gap slot', () => {
     reason: { kind: 'needGap', skillId: null, needDimension: 'scent' },
     outcome: null,
   });
-  assertEquals(row.begruendung_art, 'bedarfsluecke');
-  assertEquals(row.begruendung_bedarfsdimension, 'nase');
-  assertEquals(row.aktivitaet_id, 'sniff');
+  assertEquals(row.reason_kind, 'needGap');
+  assertEquals(row.reason_need_dimension, 'scent');
+  assertEquals(row.activity_id, 'sniff');
 });
 
-// Mirrors content/skills/rueckruf.yaml — and, once seeded, the `skill` row
-// with the same id (0002_content.sql gives the table the same field names).
-Deno.test('skillFromRow maps a skill row onto Skill', () => {
+Deno.test('reasonJsonFromReason passes the vocabulary through unchanged (DB and planner now agree)', () => {
+  assertEquals(
+    reasonJsonFromReason({ kind: 'newSkill', skillId: 'recall', needDimension: null }),
+    { kind: 'newSkill', skillId: 'recall', needDimension: null },
+  );
+  assertEquals(
+    reasonJsonFromReason({ kind: 'needGap', skillId: null, needDimension: 'scent' }),
+    { kind: 'needGap', skillId: null, needDimension: 'scent' },
+  );
+});
+
+// Mirrors content/skills/rueckruf.yaml (still German, simulator-only) — and,
+// once seeded, the joined `skill`/`skill_text` row for the same id
+// (0002_content.sql), which speaks the planner's English vocabulary directly.
+Deno.test('skillFromRow maps a skill row joined with its skill_text onto Skill', () => {
   const skill = skillFromRow({
-    id: 'rueckruf',
-    name: 'Rückruf',
-    kategorie: 'grundsignal',
-    voraussetzungen: ['namensaufmerksamkeit'],
-    min_alter_wochen: 9,
-    ist_kernskill: true,
-    zielstufen: { dauer: 1, distanz: 3, ablenkung: 4 },
-    beschreibung: 'Der Hund kommt zuverlässig zurück.\n',
+    id: 'recall',
+    category: 'basicCue',
+    prerequisites: ['name_focus'],
+    min_age_weeks: 9,
+    is_core_skill: true,
+    target_levels: { duration: 1, distance: 3, distraction: 4 },
+    skill_text: [{ skill_id: 'recall', locale: 'de', name: 'Rückruf', description: 'Der Hund kommt zuverlässig zurück.\n' }],
   });
 
-  assertEquals(skill.id, 'rueckruf');
+  assertEquals(skill.id, 'recall');
   assertEquals(skill.name, 'Rückruf');
   assertEquals(skill.category, 'basicCue');
-  assertEquals(skill.prerequisites, ['namensaufmerksamkeit']);
+  assertEquals(skill.prerequisites, ['name_focus']);
   assertEquals(skill.isCoreSkill, true);
   assertEquals(skill.targetLevels, { duration: 1, distance: 3, distraction: 4 });
   assertEquals(skill.description, 'Der Hund kommt zuverlässig zurück.');
 });
 
-// Mirrors content/aktivitaeten/schnueffelteppich_einfuehrung.yaml — and,
-// once seeded, the `aktivitaet` row with the same id.
-Deno.test('activityFromRow maps an aktivitaet row onto Activity', () => {
+// Mirrors content/aktivitaeten/schnueffelteppich_einfuehrung.yaml (still
+// German, simulator-only) — and, once seeded, the joined
+// `activity`/`activity_text` row for the same id.
+Deno.test('activityFromRow maps an activity row joined with its activity_text onto Activity', () => {
   const activity = activityFromRow({
-    id: 'schnueffelteppich_einfuehrung',
-    titel: 'Schnüffelteppich, erste Runde',
-    satz: 'Futter im Teppich verstecken und suchen lassen.\n',
-    typ: 'beschaeftigung',
-    trainiert_skill: null,
-    bedarf: { koerperlich: 1, kopfarbeit: 3, nase: 3, sozial: 0, erholung: 1 },
-    belastung: 1,
-    dauer_min: 5,
-    dauer_max: 15,
-    ort: 'drinnen',
-    fuer_ablenkung: null,
-    ist_auffrischung: false,
-    hitzetauglich: true,
-    regentauglich: true,
-    dunkeltauglich: true,
-    gelenkbelastend: false,
-    saisonfenster: null,
+    id: 'sniffing_mat_intro',
+    type: 'enrichment',
+    trains_skill: null,
+    needs: { physical: 1, mentalWork: 3, scent: 3, social: 0, recovery: 1 },
+    arousal: 1,
+    duration_min: 5,
+    duration_max: 15,
+    location: 'indoors',
+    for_distraction: null,
+    is_refresher: false,
+    heat_suitable: true,
+    rain_suitable: true,
+    darkness_suitable: true,
+    joint_straining: false,
+    seasonal_window: null,
     equipment: [],
-    zweite_person: false,
-    min_alter_wochen: 8,
-    max_alter_wochen: null,
-    eignung: { jagd: 1, huete: 1 },
-    varianzgruppe: 'nasenarbeit_drinnen',
-    sperrfrist_tage: 10,
-    illustration: 'schnueffelteppich',
-    anleitung: ['Ein Handtuch locker zusammenlegen.'],
-    erfolgskriterium: 'Er sucht selbstständig weiter.\n',
-    haeufige_fehler: ['Zu früh zu schwer versteckt.'],
-    troubleshooting: [
-      { problem: 'Er verliert das Interesse.', antwort: 'Nimm hochwertigeres Futter.\n' },
-    ],
+    second_person: false,
+    min_age_weeks: 8,
+    max_age_weeks: null,
+    suitability: { hunting: 1, herding: 1 },
+    variance_group: 'sniffing_indoors',
+    cooldown_days: 10,
+    illustration: 'sniffing_mat',
+    activity_text: [{
+      activity_id: 'sniffing_mat_intro',
+      locale: 'de',
+      title: 'Schnüffelteppich, erste Runde',
+      sentence: 'Futter im Teppich verstecken und suchen lassen.\n',
+      instructions: ['Ein Handtuch locker zusammenlegen.'],
+      success_criterion: 'Er sucht selbstständig weiter.\n',
+      common_mistakes: ['Zu früh zu schwer versteckt.'],
+      troubleshooting: [
+        { problem: 'Er verliert das Interesse.', answer: 'Nimm hochwertigeres Futter.\n' },
+      ],
+    }],
   });
 
-  assertEquals(activity.id, 'schnueffelteppich_einfuehrung');
+  assertEquals(activity.id, 'sniffing_mat_intro');
   assertEquals(activity.type, 'enrichment');
   assertEquals(activity.trainsSkill, null);
   assertEquals(activity.needs, { physical: 1, mentalWork: 3, scent: 3, social: 0, recovery: 1 });
   assertEquals(activity.location, 'indoors');
   assertEquals(activity.suitability, new Map([['hunting', 1], ['herding', 1]]));
-  assertEquals(activity.varianceGroup, 'nasenarbeit_drinnen');
+  assertEquals(activity.varianceGroup, 'sniffing_indoors');
 });

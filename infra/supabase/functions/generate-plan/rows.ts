@@ -1,212 +1,212 @@
 import type { Activity } from '../_shared/planner/models/activity.ts';
 import type { Dog } from '../_shared/planner/models/dog.ts';
-import type { BreedGroup } from '../_shared/planner/models/enums.ts';
+import type { BodyType, BreedGroup, Gender, Origin, Restriction, SizeClass } from '../_shared/planner/models/enums.ts';
 import type { Household } from '../_shared/planner/models/household.ts';
 import type { Skill } from '../_shared/planner/models/skill.ts';
 import type { HistoryEntry, SkillState } from '../_shared/planner/models/skill_state.ts';
 import type { Slot } from '../_shared/planner/models/weekly_plan.ts';
-import { parseActivityYaml } from '../_shared/content/activity_yaml.ts';
-import { parseSkillYaml } from '../_shared/content/skill_yaml.ts';
-import {
-  bodyTypeFromGerman,
-  breedGroupFromGerman,
-  experienceFromGerman,
-  genderFromGerman,
-  germanForNeedDimension,
-  germanForOutcome,
-  germanForReasonKind,
-  germanForSkillStatus,
-  housingTypeFromGerman,
-  originFromGerman,
-  outcomeFromGerman,
-  restrictionFromGerman,
-  sizeClassFromGerman,
-  skillStatusFromGerman,
-  surroundingsFromGerman,
-  weekdayFromGerman,
-} from '../_shared/content/german_enums.ts';
 
-/** Maps a `hund` row (see `infra/supabase/migrations/0001_init.sql`,
- * `0003_rasse.sql`) onto `Dog`. */
-export interface HundRow {
+/**
+ * Maps a `dog` row (see `infra/supabase/migrations/0001_init.sql`,
+ * `0003_rasse.sql`) onto `Dog`. Column values already match the planner's
+ * English vocabulary one-to-one (`origin`, `size_class`, … are the same
+ * strings as `Dog`'s fields) — no German ↔ English translation happens
+ * here, unlike the German-content path in `_shared/content/german_enums.ts`.
+ */
+export interface DogRow {
   readonly id: string;
   readonly name: string;
-  readonly geburtsdatum: string;
-  readonly einzugsdatum: string;
-  readonly herkunft: string;
-  readonly groessenklasse: string;
-  readonly koerperbau: readonly string[];
-  readonly einschraenkungen: readonly string[];
-  readonly geschlecht: string | null;
-  readonly kastriert: boolean | null;
+  readonly birth_date: string;
+  readonly arrival_date: string;
+  readonly origin: string;
+  readonly size_class: string;
+  readonly body_type: readonly string[];
+  readonly restrictions: readonly string[];
+  readonly gender: string | null;
+  readonly neutered: boolean | null;
 }
 
-/** One `hund_rasse` row joined with its `rasse.rassegruppe`
- * (`0003_rasse.sql`) — the shape a `select gewichtung, rasse:rasse_id
- * (rassegruppe)` query returns per linked breed. */
-export interface HundRasseRow {
-  readonly rassegruppe: string;
-  readonly gewichtung: number | null;
+/** One `dog_breed` row joined with its `breed.breed_group`
+ * (`0003_rasse.sql`) — the shape a `select weight, breed:breed_id
+ * (breed_group)` query returns per linked breed. */
+export interface DogBreedRow {
+  readonly breed_group: string;
+  readonly weight: number | null;
 }
 
 /**
  * Normalizes a dog's linked breeds into weights per `BreedGroup` (sum 1).
- * A missing `gewichtung` counts as 1 before normalizing, so breeds without
- * an explicitly maintained weight split evenly among themselves — no
- * upkeep needed for the common case (`docs/specs/rasse-modellieren.md`).
+ * A missing `weight` counts as 1 before normalizing, so breeds without an
+ * explicitly maintained weight split evenly among themselves — no upkeep
+ * needed for the common case (`docs/specs/rasse-modellieren.md`).
  */
 export function resolveBreedGroups(
-  breeds: readonly HundRasseRow[],
+  breeds: readonly DogBreedRow[],
 ): ReadonlyMap<BreedGroup, number> {
   if (breeds.length === 0) {
-    throw new Error('a dog needs at least one linked rasse');
+    throw new Error('a dog needs at least one linked breed');
   }
-  const totalWeight = breeds.reduce((sum, b) => sum + (b.gewichtung ?? 1), 0);
+  const totalWeight = breeds.reduce((sum, b) => sum + (b.weight ?? 1), 0);
   const groups = new Map<BreedGroup, number>();
   for (const breed of breeds) {
-    const group = breedGroupFromGerman(breed.rassegruppe);
-    const weight = (breed.gewichtung ?? 1) / totalWeight;
+    const group = breed.breed_group as BreedGroup;
+    const weight = (breed.weight ?? 1) / totalWeight;
     groups.set(group, (groups.get(group) ?? 0) + weight);
   }
   return groups;
 }
 
-export function dogFromRow(row: HundRow, breeds: readonly HundRasseRow[]): Dog {
+export function dogFromRow(row: DogRow, breeds: readonly DogBreedRow[]): Dog {
   return {
     id: row.id,
     name: row.name,
-    birthDate: new Date(row.geburtsdatum),
-    arrivalDate: new Date(row.einzugsdatum),
-    origin: originFromGerman(row.herkunft),
+    birthDate: new Date(row.birth_date),
+    arrivalDate: new Date(row.arrival_date),
+    origin: row.origin as Origin,
     breedGroups: resolveBreedGroups(breeds),
-    sizeClass: sizeClassFromGerman(row.groessenklasse),
-    bodyType: new Set(row.koerperbau.map(bodyTypeFromGerman)),
-    restrictions: new Set(row.einschraenkungen.map(restrictionFromGerman)),
-    gender: row.geschlecht === null ? null : genderFromGerman(row.geschlecht),
-    neutered: row.kastriert,
+    sizeClass: row.size_class as SizeClass,
+    bodyType: new Set(row.body_type as BodyType[]),
+    restrictions: new Set(row.restrictions as Restriction[]),
+    gender: row.gender === null ? null : (row.gender as Gender),
+    neutered: row.neutered,
   };
 }
 
-/** Maps a `haushalt` row onto `Household`. */
-export interface HaushaltRow {
+/** Maps a `household` row onto `Household`. */
+export interface HouseholdRow {
   readonly id: string;
-  readonly plz: string | null;
-  readonly wohnsituation: string;
-  readonly umgebung: string;
-  readonly erfahrung: string;
-  readonly zeitbudget_werktag_min: number;
-  readonly zeitbudget_wochenende_min: number;
-  readonly trainingstage: readonly string[];
-  readonly planungstag: string;
-  readonly personen: number;
+  readonly postal_code: string | null;
+  readonly housing_type: string;
+  readonly surroundings: string;
+  readonly experience: string;
+  readonly weekday_time_budget_min: number;
+  readonly weekend_time_budget_min: number;
+  readonly training_days: readonly string[];
+  readonly planning_day: string;
+  readonly household_size: number;
   readonly equipment: readonly string[];
 }
 
-export function householdFromRow(row: HaushaltRow): Household {
+export function householdFromRow(row: HouseholdRow): Household {
   return {
     id: row.id,
-    postalCode: row.plz,
-    housingType: housingTypeFromGerman(row.wohnsituation),
-    surroundings: surroundingsFromGerman(row.umgebung),
-    experience: experienceFromGerman(row.erfahrung),
-    weekdayTimeBudgetMinutes: row.zeitbudget_werktag_min,
-    weekendTimeBudgetMinutes: row.zeitbudget_wochenende_min,
-    trainingDays: new Set(row.trainingstage.map(weekdayFromGerman)),
-    planningDay: weekdayFromGerman(row.planungstag),
-    householdSize: row.personen,
+    postalCode: row.postal_code,
+    housingType: row.housing_type as Household['housingType'],
+    surroundings: row.surroundings as Household['surroundings'],
+    experience: row.experience as Household['experience'],
+    weekdayTimeBudgetMinutes: row.weekday_time_budget_min,
+    weekendTimeBudgetMinutes: row.weekend_time_budget_min,
+    trainingDays: new Set(row.training_days as Household['planningDay'][]),
+    planningDay: row.planning_day as Household['planningDay'],
+    householdSize: row.household_size,
     equipment: [...row.equipment],
   };
 }
 
 interface RawHistoryEntry {
-  readonly datum: string;
-  readonly ergebnis: string;
-  readonly stufe_dauer: number;
-  readonly stufe_distanz: number;
-  readonly stufe_ablenkung: number;
+  readonly date: string;
+  readonly outcome: string;
+  readonly levelDuration: number;
+  readonly levelDistance: number;
+  readonly levelDistraction: number;
 }
 
 function historyFromJson(raw: unknown): HistoryEntry[] {
   const entries = (raw ?? []) as readonly RawHistoryEntry[];
   return entries.map((entry) => ({
-    date: new Date(entry.datum),
-    outcome: outcomeFromGerman(entry.ergebnis),
+    date: new Date(entry.date),
+    outcome: entry.outcome as HistoryEntry['outcome'],
     levels: {
-      duration: entry.stufe_dauer,
-      distance: entry.stufe_distanz,
-      distraction: entry.stufe_ablenkung,
+      duration: entry.levelDuration,
+      distance: entry.levelDistance,
+      distraction: entry.levelDistraction,
     },
   }));
 }
 
 function historyToJson(history: readonly HistoryEntry[]): RawHistoryEntry[] {
   return history.map((entry) => ({
-    datum: toDateString(entry.date),
-    ergebnis: germanForOutcome(entry.outcome),
-    stufe_dauer: entry.levels.duration,
-    stufe_distanz: entry.levels.distance,
-    stufe_ablenkung: entry.levels.distraction,
+    date: toDateString(entry.date),
+    outcome: entry.outcome,
+    levelDuration: entry.levels.duration,
+    levelDistance: entry.levels.distance,
+    levelDistraction: entry.levels.distraction,
   }));
 }
 
-/** Maps a `skill_stand` row onto `SkillState`. */
-export interface SkillStandRow {
+/** Maps a `skill_state` row onto `SkillState`. */
+export interface SkillStateRow {
   readonly skill_id: string;
   readonly status: string;
-  readonly stufe_dauer: number;
-  readonly stufe_distanz: number;
-  readonly stufe_ablenkung: number;
-  readonly historie: unknown;
-  readonly letzte_uebung_am: string | null;
-  readonly faellig_am: string | null;
-  readonly intervall_tage: number;
+  readonly level_duration: number;
+  readonly level_distance: number;
+  readonly level_distraction: number;
+  readonly history: unknown;
+  readonly last_practiced_at: string | null;
+  readonly due_at: string | null;
+  readonly interval_days: number;
 }
 
-export function skillStateFromRow(row: SkillStandRow, dogId: string): SkillState {
+export function skillStateFromRow(row: SkillStateRow, dogId: string): SkillState {
   return {
     dogId,
     skillId: row.skill_id,
-    status: skillStatusFromGerman(row.status),
+    status: row.status as SkillState['status'],
     levels: {
-      duration: row.stufe_dauer,
-      distance: row.stufe_distanz,
-      distraction: row.stufe_ablenkung,
+      duration: row.level_duration,
+      distance: row.level_distance,
+      distraction: row.level_distraction,
     },
-    history: historyFromJson(row.historie),
-    lastPracticedAt: row.letzte_uebung_am === null ? null : new Date(row.letzte_uebung_am),
-    dueAt: row.faellig_am === null ? null : new Date(row.faellig_am),
-    intervalDays: row.intervall_tage,
+    history: historyFromJson(row.history),
+    lastPracticedAt: row.last_practiced_at === null ? null : new Date(row.last_practiced_at),
+    dueAt: row.due_at === null ? null : new Date(row.due_at),
+    intervalDays: row.interval_days,
   };
 }
 
-/** Builds the `skill_stand` upsert row for a (possibly just-updated) `SkillState`. */
-export function skillStandRowFromState(hundId: string, state: SkillState) {
+/** Builds the `skill_state` upsert row for a (possibly just-updated) `SkillState`. */
+export function skillStateRowFromState(dogId: string, state: SkillState) {
   return {
-    hund_id: hundId,
+    dog_id: dogId,
     skill_id: state.skillId,
-    status: germanForSkillStatus(state.status),
-    stufe_dauer: state.levels.duration,
-    stufe_distanz: state.levels.distance,
-    stufe_ablenkung: state.levels.distraction,
-    historie: historyToJson(state.history),
-    letzte_uebung_am: state.lastPracticedAt === null ? null : toDateString(state.lastPracticedAt),
-    faellig_am: state.dueAt === null ? null : toDateString(state.dueAt),
-    intervall_tage: state.intervalDays,
+    status: state.status,
+    level_duration: state.levels.duration,
+    level_distance: state.levels.distance,
+    level_distraction: state.levels.distraction,
+    history: historyToJson(state.history),
+    last_practiced_at: state.lastPracticedAt === null ? null : toDateString(state.lastPracticedAt),
+    due_at: state.dueAt === null ? null : toDateString(state.dueAt),
+    interval_days: state.intervalDays,
   };
 }
 
-/** Builds the `slot` insert row for a freshly generated `Slot` — `ergebnis` is always null at creation. */
-export function slotRowFromSlot(wochenplanId: string, slot: Slot) {
+/** Builds the `slot` insert row for a freshly generated `Slot` — `outcome` is always null at creation. */
+export function slotRowFromSlot(weeklyPlanId: string, slot: Slot) {
   return {
-    wochenplan_id: wochenplanId,
-    datum: toDateString(slot.date),
-    aktivitaet_id: slot.activityId,
-    begruendung_art: germanForReasonKind(slot.reason.kind),
-    begruendung_skill_id: slot.reason.skillId,
-    begruendung_bedarfsdimension: slot.reason.needDimension === null
-      ? null
-      : germanForNeedDimension(slot.reason.needDimension),
-    ergebnis: null,
+    weekly_plan_id: weeklyPlanId,
+    date: toDateString(slot.date),
+    activity_id: slot.activityId,
+    reason_kind: slot.reason.kind,
+    reason_skill_id: slot.reason.skillId,
+    reason_need_dimension: slot.reason.needDimension,
+    outcome: null,
+  };
+}
+
+/**
+ * Builds the `reason` object generate-plan's response sends the app — same
+ * vocabulary as `reason_kind`/`reason_need_dimension` above, so a freshly
+ * generated plan and one re-read from the DB after a `period_still_active`
+ * (`planRepository.fetchStoredPlan`) hand the app the exact same shape
+ * (`weeklyPlan.ts`'s `ReasonKind`/`PlanReason`). A thin pass-through now
+ * that the DB speaks the same vocabulary as the planner — kept as its own
+ * function so the response shape has one definition, not two ad-hoc copies.
+ */
+export function reasonJsonFromReason(reason: Slot['reason']) {
+  return {
+    kind: reason.kind,
+    skillId: reason.skillId,
+    needDimension: reason.needDimension,
   };
 }
 
@@ -215,16 +215,71 @@ export function toDateString(date: Date): string {
 }
 
 /**
- * Maps an `aktivitaet`/`skill` row (`infra/supabase/migrations/0002_content.sql`)
- * onto `Activity`/`Skill`. The tables mirror `content/schema/{aktivitaet,skill}.yaml`
- * field for field — the same shape a YAML-parsed content document has — so
- * a row read back from Postgres runs through the very same translator the
- * content loader uses, no separate DB-only mapping logic needed.
+ * Maps an `activity`/`skill` row, joined with its `locale = 'de'` text row
+ * (`infra/supabase/migrations/0002_content.sql`), onto `Activity`/`Skill`.
+ * Column values already match the planner's English vocabulary (unlike
+ * `content/{aktivitaeten,skills}/*.yaml`, still German — those feed only
+ * the simulator via `_shared/content/{activity,skill}_yaml.ts`, a separate
+ * path this file doesn't touch). Text (`title`/`sentence`/… resp.
+ * `name`/`description`) lives in the joined `activity_text`/`skill_text`
+ * row — flattened in here since it's the one place that shape matters.
  */
 export function activityFromRow(row: unknown): Activity {
-  return parseActivityYaml(row);
+  const r = row as Record<string, unknown> & { activity_text: readonly Record<string, unknown>[] };
+  const text = r.activity_text[0];
+  const needs = r.needs as Activity['needs'];
+  const suitability = new Map<BreedGroup, number>();
+  for (const [key, value] of Object.entries(r.suitability as Record<string, number>)) {
+    suitability.set(key as BreedGroup, value);
+  }
+  return {
+    id: r.id as string,
+    title: text.title as string,
+    sentence: (text.sentence as string).trim(),
+    type: r.type as Activity['type'],
+    trainsSkill: (r.trains_skill as string | null) ?? null,
+    needs,
+    arousal: r.arousal as number,
+    durationMin: r.duration_min as number,
+    durationMax: r.duration_max as number,
+    location: r.location as Activity['location'],
+    forDistraction: (r.for_distraction as [number, number] | null) ?? null,
+    isRefresher: r.is_refresher as boolean,
+    heatSuitable: r.heat_suitable as boolean,
+    rainSuitable: r.rain_suitable as boolean,
+    darknessSuitable: r.darkness_suitable as boolean,
+    jointStraining: r.joint_straining as boolean,
+    seasonalWindow: (r.seasonal_window as number[] | null) ?? null,
+    equipment: r.equipment as string[],
+    secondPerson: r.second_person as boolean,
+    minAgeWeeks: r.min_age_weeks as number,
+    maxAgeWeeks: (r.max_age_weeks as number | null) ?? null,
+    suitability,
+    varianceGroup: r.variance_group as string,
+    cooldownDays: r.cooldown_days as number,
+    illustration: (r.illustration as string | null) ?? null,
+    instructions: text.instructions as string[],
+    successCriterion: (text.success_criterion as string).trim(),
+    commonMistakes: text.common_mistakes as string[],
+    troubleshooting: (text.troubleshooting as { problem: string; answer: string }[]).map((entry) => ({
+      problem: entry.problem.trim(),
+      answer: entry.answer.trim(),
+    })),
+  };
 }
 
 export function skillFromRow(row: unknown): Skill {
-  return parseSkillYaml(row);
+  const r = row as Record<string, unknown> & { skill_text: readonly Record<string, unknown>[] };
+  const text = r.skill_text[0];
+  const targetLevels = r.target_levels as Skill['targetLevels'];
+  return {
+    id: r.id as string,
+    name: text.name as string,
+    category: r.category as Skill['category'],
+    prerequisites: (r.prerequisites as string[] | null) ?? [],
+    minAgeWeeks: r.min_age_weeks as number,
+    isCoreSkill: r.is_core_skill as boolean,
+    targetLevels,
+    description: (text.description as string).trim(),
+  };
 }

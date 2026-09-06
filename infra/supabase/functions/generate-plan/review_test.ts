@@ -2,7 +2,7 @@ import { assertEquals } from '../_shared/planner/dev_deps.ts';
 import type { Activity, Needs } from '../_shared/planner/models/activity.ts';
 import type { Skill } from '../_shared/planner/models/skill.ts';
 import type { StateMachineConfig } from '../_shared/planner/steps/state_machine_config.ts';
-import { applyRueckblick } from './rueckblick.ts';
+import { applyReview } from './review.ts';
 
 const ZERO_NEEDS: Needs = { physical: 0, mentalWork: 0, scent: 0, social: 0, recovery: 0 };
 
@@ -65,11 +65,11 @@ const stateMachineConfig: StateMachineConfig = {
   ]),
 };
 
-Deno.test('a rated slot without a skill link only updates slot.ergebnis', () => {
+Deno.test('a rated slot without a skill link only updates slot.outcome', () => {
   const enrichment = activity({ id: 'sniff' });
-  const result = applyRueckblick({
-    entries: [{ slotId: 'slot-1', ergebnis: 'klappte' }],
-    slotsById: new Map([['slot-1', { id: 'slot-1', datum: '2026-03-16', aktivitaet_id: 'sniff' }]]),
+  const result = applyReview({
+    entries: [{ slotId: 'slot-1', outcome: 'succeeded' }],
+    slotsById: new Map([['slot-1', { id: 'slot-1', date: '2026-03-16', activity_id: 'sniff' }]]),
     activityById: new Map([['sniff', enrichment]]),
     skillById: new Map(),
     skillStates: new Map(),
@@ -77,18 +77,18 @@ Deno.test('a rated slot without a skill link only updates slot.ergebnis', () => 
     dogId: 'dog-1',
   });
 
-  assertEquals(result.slotErgebnisUpdates, [{ slotId: 'slot-1', ergebnis: 'klappte' }]);
+  assertEquals(result.slotOutcomeUpdates, [{ slotId: 'slot-1', outcome: 'succeeded' }]);
   assertEquals(result.updatedSkillStates.size, 0);
 });
 
 Deno.test('a succeeded rating on a new skill creates and advances a SkillState', () => {
   const training = activity({ id: 'recall-intro', trainsSkill: 'recall' });
-  const result = applyRueckblick({
-    entries: [{ slotId: 'slot-1', ergebnis: 'klappte' }],
+  const result = applyReview({
+    entries: [{ slotId: 'slot-1', outcome: 'succeeded' }],
     slotsById: new Map([['slot-1', {
       id: 'slot-1',
-      datum: '2026-03-16',
-      aktivitaet_id: 'recall-intro',
+      date: '2026-03-16',
+      activity_id: 'recall-intro',
     }]]),
     activityById: new Map([['recall-intro', training]]),
     skillById: new Map([['recall', recall]]),
@@ -105,12 +105,12 @@ Deno.test('a succeeded rating on a new skill creates and advances a SkillState',
 
 Deno.test('skipped/notCompleted ratings never touch the state machine', () => {
   const training = activity({ id: 'recall-intro', trainsSkill: 'recall' });
-  const result = applyRueckblick({
-    entries: [{ slotId: 'slot-1', ergebnis: 'uebersprungen' }],
+  const result = applyReview({
+    entries: [{ slotId: 'slot-1', outcome: 'skipped' }],
     slotsById: new Map([['slot-1', {
       id: 'slot-1',
-      datum: '2026-03-16',
-      aktivitaet_id: 'recall-intro',
+      date: '2026-03-16',
+      activity_id: 'recall-intro',
     }]]),
     activityById: new Map([['recall-intro', training]]),
     skillById: new Map([['recall', recall]]),
@@ -120,13 +120,13 @@ Deno.test('skipped/notCompleted ratings never touch the state machine', () => {
   });
 
   assertEquals(result.updatedSkillStates.size, 0);
-  assertEquals(result.slotErgebnisUpdates, [{ slotId: 'slot-1', ergebnis: 'uebersprungen' }]);
+  assertEquals(result.slotOutcomeUpdates, [{ slotId: 'slot-1', outcome: 'skipped' }]);
 });
 
-Deno.test('an empty slot (no activity) still records ergebnis if rated, without touching state', () => {
-  const result = applyRueckblick({
-    entries: [{ slotId: 'slot-1', ergebnis: 'klappte' }],
-    slotsById: new Map([['slot-1', { id: 'slot-1', datum: '2026-03-16', aktivitaet_id: null }]]),
+Deno.test('an empty slot (no activity) still records outcome if rated, without touching state', () => {
+  const result = applyReview({
+    entries: [{ slotId: 'slot-1', outcome: 'succeeded' }],
+    slotsById: new Map([['slot-1', { id: 'slot-1', date: '2026-03-16', activity_id: null }]]),
     activityById: new Map(),
     skillById: new Map(),
     skillStates: new Map(),
@@ -135,5 +135,5 @@ Deno.test('an empty slot (no activity) still records ergebnis if rated, without 
   });
 
   assertEquals(result.updatedSkillStates.size, 0);
-  assertEquals(result.slotErgebnisUpdates, [{ slotId: 'slot-1', ergebnis: 'klappte' }]);
+  assertEquals(result.slotOutcomeUpdates, [{ slotId: 'slot-1', outcome: 'succeeded' }]);
 });
