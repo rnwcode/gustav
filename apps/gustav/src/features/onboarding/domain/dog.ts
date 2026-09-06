@@ -23,6 +23,32 @@ export const BREED_GROUP_OPTIONS = [
 ] as const;
 export type BreedGroup = (typeof BREED_GROUP_OPTIONS)[number]['value'];
 
+/**
+ * Onboarding still only asks for a group, not a specific breed (no
+ * breed-search UI exists yet) — this maps that choice onto one of the nine
+ * generic placeholder rows in `rasse` seeded by `0003_rasse.sql`
+ * (`docs/specs/rasse-modellieren.md`). `createDog` links the new dog to
+ * this row via `hund_rasse` instead of writing a `rassegruppe` column,
+ * which no longer exists on `hund`.
+ */
+export const RASSE_ID_BY_BREED_GROUP: Record<BreedGroup, string> = {
+  huete: 'gruppe_huete',
+  jagd: 'gruppe_jagd',
+  begleit: 'gruppe_begleit',
+  herdenschutz: 'gruppe_herdenschutz',
+  terrier: 'gruppe_terrier',
+  wind: 'gruppe_wind',
+  nordisch: 'gruppe_nordisch',
+  molosser: 'gruppe_molosser',
+  misch: 'gruppe_misch',
+};
+
+export const GENDER_OPTIONS = [
+  { value: 'ruede', label: 'Rüde' },
+  { value: 'huendin', label: 'Hündin' },
+] as const;
+export type Gender = (typeof GENDER_OPTIONS)[number]['value'];
+
 export const SIZE_CLASS_OPTIONS = [
   { value: 'klein', label: 'Klein' },
   { value: 'mittel', label: 'Mittel' },
@@ -45,9 +71,12 @@ export const RESTRICTION_OPTIONS = [
 ] as const;
 export type Restriction = (typeof RESTRICTION_OPTIONS)[number]['value'];
 
-/** Mirrors the `hund` table — no `lifeStage`/`heatSensitivity`: those are
- * derived server-side from `birthDate`/`today`, never stored, and the app
- * has no time logic of its own (CLAUDE.md, Regel 2). */
+/** Mostly mirrors the `hund` table — no `lifeStage`/`heatSensitivity`:
+ * those are derived server-side from `birthDate`/`today`, never stored,
+ * and the app has no time logic of its own (CLAUDE.md, Regel 2).
+ * `breedGroup` is the one exception: it doesn't map onto a `hund` column
+ * (that's gone, `0003_rasse.sql`) — `createDog` turns it into a
+ * `hund_rasse` link instead, see `RASSE_ID_BY_BREED_GROUP`. */
 export type Dog = {
   name: string;
   birthDate: string; // ISO yyyy-mm-dd
@@ -57,4 +86,8 @@ export type Dog = {
   sizeClass: SizeClass;
   bodyType: readonly BodyType[];
   restrictions: readonly Restriction[];
+  /** `null` = nicht angegeben — ein legitimer Zustand, gerade bei
+   * Tierschutzhunden ohne Papiere. */
+  gender: Gender | null;
+  neutered: boolean | null;
 };

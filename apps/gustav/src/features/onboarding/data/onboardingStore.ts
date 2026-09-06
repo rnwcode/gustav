@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import type { BodyType, BreedGroup, Origin, Restriction, SizeClass } from '../domain/dog';
+import type { BodyType, BreedGroup, Gender, Origin, Restriction, SizeClass } from '../domain/dog';
 import {
   draftToDog,
   draftToHousehold,
@@ -41,7 +41,16 @@ type OnboardingState = {
 
   next: () => void;
   back: () => void;
-  setDogBasics: (patch: { dogName?: string; birthDate?: string; arrivalDate?: string; origin?: Origin }) => void;
+  setDogBasics: (
+    patch: {
+      dogName?: string;
+      birthDate?: string;
+      arrivalDate?: string;
+      origin?: Origin;
+      gender?: Gender;
+      neutered?: boolean;
+    },
+  ) => void;
   setBreed: (patch: { breedGroup?: BreedGroup; sizeClass?: SizeClass }) => void;
   toggleBodyType: (value: BodyType) => void;
   toggleRestriction: (value: Restriction) => void;

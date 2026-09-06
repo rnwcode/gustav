@@ -47,21 +47,20 @@ DB error.
   matching `docs/datenmodell.md`'s "open-ended, translator- produced" description — though no
   planner step reads `flags` yet either, so today this only affects what gets stored, not the plan.
 
-## One temporary shim — read before deploying for real
+## Content and config both come from Postgres now
 
-Called out where it happens in `index.ts`, repeated here because it matters for anyone building on
-this:
+Skills/activities come from the `aktivitaet`/`skill` tables (`infra/supabase/migrations/
+0002_content.sql`), maintained directly there (Supabase Studio/SQL, CLAUDE.md rule 5) — no import
+step from files. `_shared/planner/fixtures/` still exists, but only the simulator and tests use it
+now.
 
-**Config**: `content/planer.yaml` is read from disk via the existing loader. That works under
-`supabase functions serve` (runs from the checkout, real filesystem) but **not** after
-`supabase functions deploy` — a deployed function's bundle doesn't include `content/`. Move this to
-a DB-backed config table before a real deploy (`docs/specs/content-aus-db-laden.md`, "Nicht dazu
-gehört" — a separate piece of work from the `aktivitaet`/`skill` catalog tables that already exist).
-
-Skills/activities themselves come from the `aktivitaet`/`skill` tables
-(`infra/supabase/migrations/0002_content.sql`), maintained directly there (Supabase Studio/SQL,
-CLAUDE.md rule 5) — no import step from files. `_shared/planner/fixtures/` still exists, but only
-the simulator and tests use it now.
+The planner config (`content/planer.yaml`) comes from `planer_konfig`
+(`infra/supabase/migrations/0004_planer_konfig.sql`), read as the row with the highest `version` and
+run through the same `_shared/content/planer_yaml.ts` parsers as before. This used to be a plain
+`Deno.readTextFile` against the checkout — worked under `supabase functions serve` (runs from the
+checkout, real filesystem) but broke every real `supabase functions deploy` with `NotFound:
+/var/content/planer.yaml`, since a deployed bundle doesn't include `content/`. Caught live, not just
+in theory — see `docs/specs/planer-konfig-aus-db.md`.
 
 ## Testing
 

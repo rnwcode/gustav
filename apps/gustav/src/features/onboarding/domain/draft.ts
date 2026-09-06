@@ -1,4 +1,4 @@
-import type { BodyType, BreedGroup, Dog, Origin, Restriction, SizeClass } from './dog';
+import type { BodyType, BreedGroup, Dog, Gender, Origin, Restriction, SizeClass } from './dog';
 import type { Experience, Household, HousingType, Surroundings } from './household';
 import type { Weekday } from './weekday';
 
@@ -13,6 +13,8 @@ export type OnboardingDraft = {
   sizeClass: SizeClass | null;
   bodyType: ReadonlySet<BodyType>;
   restrictions: ReadonlySet<Restriction>;
+  gender: Gender | null;
+  neutered: boolean | null;
 
   postalCode: string | null;
   housingType: HousingType | null;
@@ -35,6 +37,8 @@ export const initialDraft: OnboardingDraft = {
   sizeClass: null,
   bodyType: new Set(),
   restrictions: new Set(),
+  gender: null,
+  neutered: null,
   postalCode: null,
   housingType: null,
   surroundings: null,
@@ -92,6 +96,8 @@ export function draftToDog(d: OnboardingDraft): Dog {
     sizeClass: d.sizeClass!,
     bodyType: [...d.bodyType],
     restrictions: [...d.restrictions],
+    gender: d.gender,
+    neutered: d.neutered,
   };
 }
 

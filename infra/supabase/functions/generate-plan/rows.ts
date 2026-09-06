@@ -1,5 +1,6 @@
 import type { Activity } from '../_shared/planner/models/activity.ts';
 import type { Dog } from '../_shared/planner/models/dog.ts';
+import type { BreedGroup } from '../_shared/planner/models/enums.ts';
 import type { Household } from '../_shared/planner/models/household.ts';
 import type { Skill } from '../_shared/planner/models/skill.ts';
 import type { HistoryEntry, SkillState } from '../_shared/planner/models/skill_state.ts';
@@ -10,6 +11,7 @@ import {
   bodyTypeFromGerman,
   breedGroupFromGerman,
   experienceFromGerman,
+  genderFromGerman,
   germanForNeedDimension,
   germanForOutcome,
   germanForReasonKind,
@@ -24,30 +26,64 @@ import {
   weekdayFromGerman,
 } from '../_shared/content/german_enums.ts';
 
-/** Maps a `hund` row (see `infra/supabase/migrations/0001_init.sql`) onto `Dog`. */
+/** Maps a `hund` row (see `infra/supabase/migrations/0001_init.sql`,
+ * `0003_rasse.sql`) onto `Dog`. */
 export interface HundRow {
   readonly id: string;
   readonly name: string;
   readonly geburtsdatum: string;
   readonly einzugsdatum: string;
   readonly herkunft: string;
-  readonly rassegruppe: string;
   readonly groessenklasse: string;
   readonly koerperbau: readonly string[];
   readonly einschraenkungen: readonly string[];
+  readonly geschlecht: string | null;
+  readonly kastriert: boolean | null;
 }
 
-export function dogFromRow(row: HundRow): Dog {
+/** One `hund_rasse` row joined with its `rasse.rassegruppe`
+ * (`0003_rasse.sql`) — the shape a `select gewichtung, rasse:rasse_id
+ * (rassegruppe)` query returns per linked breed. */
+export interface HundRasseRow {
+  readonly rassegruppe: string;
+  readonly gewichtung: number | null;
+}
+
+/**
+ * Normalizes a dog's linked breeds into weights per `BreedGroup` (sum 1).
+ * A missing `gewichtung` counts as 1 before normalizing, so breeds without
+ * an explicitly maintained weight split evenly among themselves — no
+ * upkeep needed for the common case (`docs/specs/rasse-modellieren.md`).
+ */
+export function resolveBreedGroups(
+  breeds: readonly HundRasseRow[],
+): ReadonlyMap<BreedGroup, number> {
+  if (breeds.length === 0) {
+    throw new Error('a dog needs at least one linked rasse');
+  }
+  const totalWeight = breeds.reduce((sum, b) => sum + (b.gewichtung ?? 1), 0);
+  const groups = new Map<BreedGroup, number>();
+  for (const breed of breeds) {
+    const group = breedGroupFromGerman(breed.rassegruppe);
+    const weight = (breed.gewichtung ?? 1) / totalWeight;
+    groups.set(group, (groups.get(group) ?? 0) + weight);
+  }
+  return groups;
+}
+
+export function dogFromRow(row: HundRow, breeds: readonly HundRasseRow[]): Dog {
   return {
     id: row.id,
     name: row.name,
     birthDate: new Date(row.geburtsdatum),
     arrivalDate: new Date(row.einzugsdatum),
     origin: originFromGerman(row.herkunft),
-    breedGroup: breedGroupFromGerman(row.rassegruppe),
+    breedGroups: resolveBreedGroups(breeds),
     sizeClass: sizeClassFromGerman(row.groessenklasse),
     bodyType: new Set(row.koerperbau.map(bodyTypeFromGerman)),
     restrictions: new Set(row.einschraenkungen.map(restrictionFromGerman)),
+    gender: row.geschlecht === null ? null : genderFromGerman(row.geschlecht),
+    neutered: row.kastriert,
   };
 }
 

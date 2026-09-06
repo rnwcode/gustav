@@ -32,6 +32,8 @@ export type BreedGroup =
 
 export type SizeClass = 'small' | 'medium' | 'large';
 
+export type Gender = 'male' | 'female';
+
 export type BodyType = 'brachycephalic' | 'denseUndercoat' | 'longLegged';
 
 export type Restriction = 'protectiveCare' | 'jointIssues' | 'senior' | 'recovery';

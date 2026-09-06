@@ -11,6 +11,7 @@ import type {
   BreedGroup,
   Dimension,
   Experience,
+  Gender,
   HousingType,
   LifeStage,
   Location,
@@ -120,6 +121,14 @@ const SIZE_CLASS: Record<string, SizeClass> = {
 };
 export function sizeClassFromGerman(value: string): SizeClass {
   return lookup(SIZE_CLASS, value, 'size class');
+}
+
+const GENDER: Record<string, Gender> = {
+  ruede: 'male',
+  huendin: 'female',
+};
+export function genderFromGerman(value: string): Gender {
+  return lookup(GENDER, value, 'gender');
 }
 
 const BODY_TYPE: Record<string, BodyType> = {

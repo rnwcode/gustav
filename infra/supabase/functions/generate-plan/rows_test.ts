@@ -1,35 +1,90 @@
-import { assertEquals } from '../_shared/planner/dev_deps.ts';
+import { assertEquals, assertThrows } from '../_shared/planner/dev_deps.ts';
 import {
   activityFromRow,
   dogFromRow,
   householdFromRow,
+  resolveBreedGroups,
   skillFromRow,
   skillStandRowFromState,
   skillStateFromRow,
   slotRowFromSlot,
 } from './rows.ts';
 
-Deno.test('dogFromRow maps a hund row onto Dog', () => {
+Deno.test('dogFromRow maps a hund row onto Dog, breed group from the linked rasse', () => {
   const dog = dogFromRow({
     id: 'dog-1',
     name: 'Gustav',
     geburtsdatum: '2023-01-01',
     einzugsdatum: '2023-01-15',
     herkunft: 'zuechter',
-    rassegruppe: 'huete',
     groessenklasse: 'mittel',
     koerperbau: ['brachyzephal'],
     einschraenkungen: ['schonung'],
-  });
+    geschlecht: 'ruede',
+    kastriert: true,
+  }, [{ rassegruppe: 'huete', gewichtung: null }]);
 
   assertEquals(dog.id, 'dog-1');
   assertEquals(dog.birthDate, new Date('2023-01-01'));
   assertEquals(dog.arrivalDate, new Date('2023-01-15'));
   assertEquals(dog.origin, 'breeder');
-  assertEquals(dog.breedGroup, 'herding');
+  assertEquals(dog.breedGroups, new Map([['herding', 1]]));
   assertEquals(dog.sizeClass, 'medium');
   assertEquals(dog.bodyType, new Set(['brachycephalic']));
   assertEquals(dog.restrictions, new Set(['protectiveCare']));
+  assertEquals(dog.gender, 'male');
+  assertEquals(dog.neutered, true);
+});
+
+Deno.test('dogFromRow tolerates unknown gender/neutered status', () => {
+  const dog = dogFromRow({
+    id: 'dog-1',
+    name: 'Gustav',
+    geburtsdatum: '2023-01-01',
+    einzugsdatum: '2023-01-15',
+    herkunft: 'zuechter',
+    groessenklasse: 'mittel',
+    koerperbau: [],
+    einschraenkungen: [],
+    geschlecht: null,
+    kastriert: null,
+  }, [{ rassegruppe: 'misch', gewichtung: null }]);
+
+  assertEquals(dog.gender, null);
+  assertEquals(dog.neutered, null);
+});
+
+Deno.test('resolveBreedGroups: one breed, no weight needed', () => {
+  const groups = resolveBreedGroups([{ rassegruppe: 'huete', gewichtung: null }]);
+  assertEquals(groups, new Map([['herding', 1]]));
+});
+
+Deno.test('resolveBreedGroups: two breeds without an explicit weight split evenly', () => {
+  const groups = resolveBreedGroups([
+    { rassegruppe: 'huete', gewichtung: null },
+    { rassegruppe: 'jagd', gewichtung: null },
+  ]);
+  assertEquals(groups, new Map([['herding', 0.5], ['hunting', 0.5]]));
+});
+
+Deno.test('resolveBreedGroups: an explicit weight ratio overrides the even split', () => {
+  const groups = resolveBreedGroups([
+    { rassegruppe: 'huete', gewichtung: 3 },
+    { rassegruppe: 'jagd', gewichtung: 1 },
+  ]);
+  assertEquals(groups, new Map([['herding', 0.75], ['hunting', 0.25]]));
+});
+
+Deno.test('resolveBreedGroups: two breeds in the same group merge into one weight', () => {
+  const groups = resolveBreedGroups([
+    { rassegruppe: 'huete', gewichtung: null },
+    { rassegruppe: 'huete', gewichtung: null },
+  ]);
+  assertEquals(groups, new Map([['herding', 1]]));
+});
+
+Deno.test('resolveBreedGroups: no linked breed is a data error', () => {
+  assertThrows(() => resolveBreedGroups([]));
 });
 
 Deno.test('householdFromRow maps a haushalt row onto Household', () => {

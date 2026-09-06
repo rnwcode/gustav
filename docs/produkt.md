@@ -30,10 +30,19 @@ Ersthundehalter in den ersten Monaten haben akuten Leidensdruck, suchen aktiv
 und zahlen — der erwachsene Hund hat kein Problem, sondern ein diffuses
 schlechtes Gewissen und konvertiert schlechter.
 
-Nicht im MVP: KI-Coach, Add-on-Module, Wetterlogik, Rasse-Spezialpfade,
-erwachsener Hund, zweite Sprache. Alles davon ist im Datenmodell vorgesehen
-(siehe `datenmodell.md`, Abschnitt Backlog) und wird erst nach den ersten
+Nicht im MVP: KI-Coach, Add-on-Module, Wetterlogik, erwachsener Hund,
+zweite Sprache. Alles davon ist im Datenmodell vorgesehen (siehe
+`datenmodell.md`, Abschnitt Backlog) und wird erst nach den ersten
 100 zahlenden Kunden gebaut.
+
+**Rasse statt Rassegruppe ist vorgezogen** (`docs/specs/rasse-modellieren.md`):
+Eine eigene `rasse`-Tabelle trägt die Rassegruppe, ein Hund kann mehrere
+Rassen verknüpfen (Mischling, gewichtet). Echte, einzeln benannte Rassen
+sind trotzdem noch nicht befüllt — nur neun Gruppen-Platzhalter — weil das
+Fachwissen erfordert, keine Engineering-Arbeit. Die Scope-Grenze war
+richtig, den Aufwand für 300 Rassen jetzt nicht zu treiben; die
+Tabellenstruktur schon zu haben, kostet nichts und macht das Nachliefern
+später zu reiner Dateneingabe.
 
 ## Die Wochenschleife
 

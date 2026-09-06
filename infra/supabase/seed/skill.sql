@@ -1,0 +1,29 @@
+-- skill
+--
+-- Generiert aus content/import/skill.csv per csv_to_seed_sql.py -- siehe dort
+-- (README) fuer Herkunft und Einschraenkungen der Daten. `on conflict do
+-- nothing`: erneutes Ausfuehren (z. B. nach `supabase db reset`)
+-- dupliziert nichts.
+
+insert into skill (id, name, kategorie, voraussetzungen, min_alter_wochen, ist_kernskill, zielstufen, beschreibung) values
+  ('sitz', 'Sitz', 'grundsignal', '{}', 9, true, '{"dauer": 1, "distanz": 1, "ablenkung": 2}'::jsonb, 'Der Hund setzt sich auf Kommando und bleibt sitzen, bis er freigegeben wird.'),
+  ('platz', 'Platz', 'grundsignal', '{"sitz"}', 9, true, '{"dauer": 1, "distanz": 1, "ablenkung": 2}'::jsonb, 'Der Hund legt sich auf Kommando ab — die Grundlage für Ruhe und Bleib-Übungen.'),
+  ('bleib', 'Bleib', 'grundsignal', '{"sitz","platz"}', 13, true, '{"dauer": 1, "distanz": 1, "ablenkung": 2}'::jsonb, 'Der Hund hält Sitz oder Platz, bis er aktiv freigegeben wird, auch wenn etwas ablenkt.'),
+  ('rueckruf', 'Rückruf', 'grundsignal', '{}', 9, true, '{"dauer": 1, "distanz": 1, "ablenkung": 2}'::jsonb, 'Der Hund kommt auf ein Signal zuverlässig zurück, auch mit Ablenkung — anfangs an der Schleppleine gesichert.'),
+  ('leinenfuehrigkeit', 'Leinenführigkeit', 'leinenarbeit', '{}', 9, true, '{"dauer": 1, "distanz": 1, "ablenkung": 2}'::jsonb, 'Der Hund geht an lockerer Leine, ohne zu ziehen — am besten mit Geschirr statt Halsband.'),
+  ('aus_loslassen', 'Aus / Loslassen', 'impulskontrolle', '{}', 9, true, '{"dauer": 1, "distanz": 1, "ablenkung": 2}'::jsonb, 'Der Hund gibt einen Gegenstand ab, ohne dass er ihm weggenommen werden muss.'),
+  ('abbruchsignal_nein', 'Abbruchsignal (Nein)', 'impulskontrolle', '{}', 9, true, '{"dauer": 1, "distanz": 1, "ablenkung": 2}'::jsonb, 'Ein Signal, das eine unerwünschte Handlung sofort stoppt — rein positiv aufgebaut, ohne Strafe.'),
+  ('apportieren', 'Apportieren', 'kooperation', '{"aus_loslassen"}', 17, false, '{"dauer": 2, "distanz": 3, "ablenkung": 3}'::jsonb, 'Der Hund bringt einen geworfenen Gegenstand zurück und gibt ihn ab.'),
+  ('hand_target_touch', 'Hand-Target (Touch)', 'kooperation', '{}', 9, false, '{"dauer": 1, "distanz": 1, "ablenkung": 2}'::jsonb, 'Der Hund berührt die Handfläche mit der Nase — Grundlage für viele weitere Übungen.'),
+  ('blickkontakt_fokus', 'Blickkontakt / Fokus', 'kooperation', '{}', 9, false, '{"dauer": 1, "distanz": 1, "ablenkung": 2}'::jsonb, 'Der Hund sucht von sich aus Blickkontakt zum Halter, auch mit Ablenkung in der Nähe.'),
+  ('maennchen', 'Männchen', 'kooperation', '{"sitz"}', 52, false, '{"dauer": 2, "distanz": 3, "ablenkung": 3}'::jsonb, 'Der Hund setzt sich auf und hält die Vorderpfoten in der Luft.'),
+  ('rolle', 'Rolle', 'kooperation', '{"platz"}', 26, false, '{"dauer": 2, "distanz": 3, "ablenkung": 3}'::jsonb, 'Der Hund rollt sich auf Kommando einmal um die eigene Achse.'),
+  ('slalom_durch_die_beine', 'Slalom durch die Beine', 'kooperation', '{}', 26, false, '{"dauer": 2, "distanz": 3, "ablenkung": 3}'::jsonb, 'Der Hund läuft im Slalom durch die Beine des Halters.'),
+  ('kriechen', 'Kriechen', 'kooperation', '{"platz"}', 26, false, '{"dauer": 2, "distanz": 3, "ablenkung": 3}'::jsonb, 'Der Hund robbt flach am Boden vorwärts.'),
+  ('pfote_geben', 'Pfote geben', 'kooperation', '{"sitz"}', 13, false, '{"dauer": 1, "distanz": 1, "ablenkung": 2}'::jsonb, 'Der Hund reicht auf Kommando eine Pfote.'),
+  ('faehrtensuche_mantrailing', 'Fährtensuche / Mantrailing', 'kooperation', '{}', 17, false, '{"dauer": 2, "distanz": 3, "ablenkung": 3}'::jsonb, 'Der Hund folgt einer Geruchsspur über Distanz — im eigenen Tempo, mit Geschirr statt Halsband.'),
+  ('gegenstandsanzeige_zos', 'Gegenstandsanzeige (ZOS)', 'kooperation', '{"platz"}', 26, false, '{"dauer": 3, "distanz": 4, "ablenkung": 5}'::jsonb, 'Der Hund findet einen bestimmten Gegenstand per Nase und zeigt ihn an.'),
+  ('sprung_ueber_hindernis', 'Sprung über Hindernis', 'kooperation', '{}', 52, false, '{"dauer": 3, "distanz": 4, "ablenkung": 5}'::jsonb, 'Der Hund springt kontrolliert über ein Hindernis — erst ab geschlossenen Wachstumsfugen (ca. 12–15 Monate).'),
+  ('stopp_auf_distanz', 'Stopp auf Distanz', 'impulskontrolle', '{"bleib"}', 26, true, '{"dauer": 3, "distanz": 4, "ablenkung": 5}'::jsonb, 'Der Hund stoppt sofort auf Signal, auch auf Distanz und in Bewegung.'),
+  ('rueckwaertsgehen', 'Rückwärtsgehen', 'kooperation', '{}', 26, false, '{"dauer": 2, "distanz": 3, "ablenkung": 3}'::jsonb, 'Der Hund geht auf Kommando rückwärts.')
+on conflict (id) do nothing;

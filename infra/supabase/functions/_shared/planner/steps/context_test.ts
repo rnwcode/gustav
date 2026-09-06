@@ -55,10 +55,12 @@ function dogFixture(overrides: Partial<Dog>): Dog {
     birthDate: daysBefore(1095),
     arrivalDate: daysBefore(730),
     origin: 'breeder',
-    breedGroup: 'companion',
+    breedGroups: new Map([['companion', 1]]),
     sizeClass: 'medium',
     bodyType: new Set(),
     restrictions: new Set(),
+    gender: null,
+    neutered: null,
     ...overrides,
   };
 }

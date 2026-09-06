@@ -5,29 +5,32 @@
 // ── Katalog: aktivitaet/skill (Postgres) ────────────────────────────────────
 //
 // Skills/Aktivitäten kommen aus den Tabellen `aktivitaet`/`skill`
-// (infra/supabase/migrations/0002_content.sql, geseedet per
-// `tool/seed_content.ts` aus content/) — nicht mehr aus
+// (infra/supabase/migrations/0002_content.sql) — nicht mehr aus
 // `_shared/planner/fixtures/`, die weiterhin nur Simulator und Tests
-// bedienen (docs/specs/content-aus-db-laden.md). Die 40 echten Aktivitäten
-// selbst sind noch Trainerarbeit (siehe fixtures/README.md); geseedet ist
-// bislang nur, was in content/ tatsächlich liegt.
+// bedienen (docs/specs/content-aus-db-laden.md). Direkt in der DB
+// gepflegt (CLAUDE.md, Regel 5); `infra/supabase/seed/{skill,aktivitaet}.sql`
+// bootstrapt eine lokale/gehostete DB aus `content/import/*.csv` (siehe
+// dortige READMEs für Herkunft und Einschränkungen der Daten).
 //
-// ── Konfiguration: Datei statt DB, vorerst ──────────────────────────────────
+// ── Konfiguration: planer_konfig (Postgres) ─────────────────────────────────
 //
-// content/planer.yaml wird über den bestehenden Loader gelesen (nicht
-// importiert, CLAUDE.md Regel 10) — das funktioniert lokal über
-// `supabase functions serve` (läuft aus dem Checkout heraus, echter
-// Dateisystemzugriff), aber NICHT nach einem echten `supabase functions
-// deploy` (der Function-Bundle enthält dann kein content/ mehr). Für einen
-// echten Produktionsdeploy muss das durch einen DB-Read auf eine
-// Konfigurationstabelle ersetzt werden — auch das ist Teil der noch
-// fehlenden Content-Migration, nicht dieser Funktion.
+// content/planer.yaml kommt jetzt aus der Tabelle `planer_konfig`
+// (infra/supabase/migrations/0004_planer_konfig.sql) statt per Dateisystem-
+// zugriff: ein `supabase functions deploy`-Bundle enthält kein content/
+// mehr, der bisherige Datei-Read schlug nach jedem echten Deploy mit
+// `NotFound: /var/content/planer.yaml` fehl (nur unter `supabase functions
+// serve`, das aus dem Checkout heraus läuft, funktionierte er). Gelesen
+// wird immer die höchste `version` — die Werte selbst ändert kein Agent
+// eigenmächtig (CLAUDE.md, Regel 6).
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { FakeClock, systemClock } from '../_shared/planner/clock.ts';
 import type { Clock } from '../_shared/planner/clock.ts';
 import { plan } from '../_shared/planner/plan.ts';
-import { loadPlannerConfig, loadStateMachineConfig } from '../_shared/content/loader.ts';
+import {
+  parsePlanerConfigYaml,
+  parseStateMachineConfigYaml,
+} from '../_shared/content/planer_yaml.ts';
 import { germanForWeekday, germanForWeeklyContextSource } from '../_shared/content/german_enums.ts';
 import {
   activityFromRow,
@@ -44,8 +47,6 @@ import type { PastSlotRow } from './history.ts';
 import { applyRueckblick } from './rueckblick.ts';
 import type { RatedSlotRow, RueckblickEntry } from './rueckblick.ts';
 import { translateCheckin } from './checkin_translator.ts';
-
-const PLANER_YAML = new URL('../../../../content/planer.yaml', import.meta.url);
 
 interface RequestBody {
   readonly hundId: string;
@@ -109,6 +110,17 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'hund_query_failed', detail: hundError.message }, 500);
   }
   if (hundRow === null) return jsonResponse({ error: 'hund_not_found' }, 404);
+
+  const { data: hundRasseRows, error: hundRasseError } = await supabase
+    .from('hund_rasse')
+    .select('gewichtung, rasse:rasse_id(rassegruppe)')
+    .eq('hund_id', body.hundId);
+  if (hundRasseError) {
+    return jsonResponse(
+      { error: 'hund_rasse_query_failed', detail: hundRasseError.message },
+      500,
+    );
+  }
 
   const { data: haushaltRow, error: haushaltError } = await supabase
     .from('haushalt')
@@ -194,7 +206,11 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const dog = dogFromRow(hundRow);
+  const breeds = (hundRasseRows ?? []).map((row) => ({
+    rassegruppe: (row.rasse as unknown as { rassegruppe: string }).rassegruppe,
+    gewichtung: row.gewichtung as number | null,
+  }));
+  const dog = dogFromRow(hundRow, breeds);
   const household = householdFromRow(haushaltRow);
   const activityCatalog = (activityRows ?? []).map(activityFromRow);
   const skillCatalog = (skillRows ?? []).map(skillFromRow);
@@ -218,10 +234,21 @@ Deno.serve(async (req: Request) => {
     ) => [row.id, { id: row.id, datum: row.datum, aktivitaet_id: row.aktivitaet_id }]),
   );
 
-  const [plannerConfig, stateMachineConfig] = await Promise.all([
-    loadPlannerConfig(PLANER_YAML),
-    loadStateMachineConfig(PLANER_YAML),
-  ]);
+  const { data: planerKonfigRow, error: planerKonfigError } = await supabase
+    .from('planer_konfig')
+    .select('konfig')
+    .order('version', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (planerKonfigError) {
+    return jsonResponse(
+      { error: 'planer_konfig_query_failed', detail: planerKonfigError.message },
+      500,
+    );
+  }
+  if (planerKonfigRow === null) return jsonResponse({ error: 'planer_konfig_missing' }, 500);
+  const plannerConfig = parsePlanerConfigYaml(planerKonfigRow.konfig);
+  const stateMachineConfig = parseStateMachineConfigYaml(planerKonfigRow.konfig);
 
   const { updatedSkillStates, slotErgebnisUpdates } = applyRueckblick({
     entries: rueckblickEntries,

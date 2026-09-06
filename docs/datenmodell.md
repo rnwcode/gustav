@@ -108,11 +108,24 @@ name                  text
 geburtsdatum          date        # → alter_wochen, treibt die Welpenphase
 einzugsdatum          date        # 3 Jahre alt, seit 2 Wochen da = wie ein Welpe
 herkunft              enum züchter | tierschutz | privat | unbekannt
-rassegruppe           enum hüte | jagd | begleit | herdenschutz | terrier
-                           | wind | nordisch | molosser | misch
 groessenklasse        enum klein | mittel | gross
 koerperbau[]          enum brachyzephal | dichte_unterwolle | langbeinig
 einschraenkungen[]    enum schonung | gelenke | senior | rekonvaleszenz
+geschlecht            enum ruede | huendin | null   # null = nicht angegeben
+kastriert             bool | null                   # null = nicht angegeben
+
+# rasse — für alle Hunde gleich, kein Nutzerzustand (docs/specs/rasse-modellieren.md)
+id                    text
+name                  text
+rassegruppe           enum hüte | jagd | begleit | herdenschutz | terrier
+                           | wind | nordisch | molosser | misch
+
+# hund_rasse — Verknüpfung, mehrere Zeilen pro Hund bei einem Mischling
+hund_id               uuid
+rasse_id              text
+gewichtung            numeric?    # null = gleichmäßig verteilt auf alle
+                                  # Rassen dieses Hundes, kein Pflegeaufwand
+                                  # im Normalfall
 
 # abgeleitet, nicht gespeichert
 hitzeempfindlichkeit  0–3   # brachyzephal +2, dichte Unterwolle +1,
@@ -138,6 +151,17 @@ equipment[]           text
 einem Bruchteil des Aufwands. Die Gruppe **filtert nie hart**, sie gewichtet
 nur — sonst baut man Vorurteile ins Produkt ein. Einzige harte Verwendung ist
 Sicherheit: brachyzephale Hunde bei Hitze.
+
+**Rasse statt Rassegruppe direkt am Hund** (vorgezogen aus dem Backlog, siehe
+`produkt.md`, Abschnitt „Zielgruppe und Umfang des MVP", und
+`docs/specs/rasse-modellieren.md`): Die Rassegruppe hängt jetzt an einer
+eigenen `rasse`-Zeile, nicht mehr direkt am Hund — ein Mischling kann über
+`hund_rasse` mehrere Rassen verknüpfen, gewichtet. `groessenklasse` und
+`koerperbau` bleiben am Hund: sie werden unabhängig von der Rassegruppe
+direkt vom Halter angegeben, sind also Eigenschaften des einzelnen Tieres,
+keine Rasseeigenschaften. Echte, einzeln benannte Rassen (statt nur der
+neun Gruppen) sind noch nicht befüllt — das ist Fachwissen über korrekte
+Gruppen-Zuordnung, keine Engineering-Arbeit.
 
 ## Skills und die drei D
 
@@ -282,7 +306,9 @@ ungeseedeten Zufallszahlen, kein LLM. Alle Parameter kommen aus
           + w_faellig      · min(ueberfaellig_tage / 7, deckel)
           + w_bedarf       · bedarfsluecke
           + w_neu          · ist_neuer_skill
-          + w_eignung      · eignung[rassegruppe]
+          + w_eignung      · Σ eignung[rassegruppe] · anteil[rassegruppe]
+                             (eine Rasse: anteil = 1; Mischling: Anteile
+                             summieren sich zu 1, `hund_rasse.gewichtung`)
           − w_belastung    · belastung      (nur bei erholungsbedarf ≥ mittel)
           − w_kuerzlich    · kuerzlich_gemacht
    Tie-Break deterministisch über die Aktivitäts-ID.

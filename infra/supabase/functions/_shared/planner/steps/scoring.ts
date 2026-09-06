@@ -22,13 +22,15 @@ export interface ScoredActivity {
 export function scoreActivities(args: {
   pool: readonly Activity[];
   candidates: CandidatePool;
-  breedGroup: BreedGroup;
+  /** Normalized weights (sum 1) — a mixed-breed dog carries more than one
+   * group at once (`docs/specs/rasse-modellieren.md`). */
+  breedGroups: ReadonlyMap<BreedGroup, number>;
   recoveryNeed: RecoveryNeed;
   lastUsedByActivityId: ReadonlyMap<string, Date>;
   today: Date;
   config: ScoringConfig;
 }): ScoredActivity[] {
-  const { pool, candidates, breedGroup, recoveryNeed, lastUsedByActivityId, today, config } = args;
+  const { pool, candidates, breedGroups, recoveryNeed, lastUsedByActivityId, today, config } = args;
 
   const focusById = new Map<string, SkillFocus>(candidates.skills.map((f) => [f.skillId, f]));
   const gappedDimensions = new Set<NeedDimension>(candidates.needs.map((n) => n.dimension));
@@ -50,7 +52,10 @@ export function scoreActivities(args: {
 
     const newSkillScore = config.newSkillWeight * ((focus?.isNewSkill ?? false) ? 1 : 0);
 
-    const suitability = activity.suitability.get(breedGroup) ?? 0;
+    let suitability = 0;
+    for (const [group, weight] of breedGroups) {
+      suitability += (activity.suitability.get(group) ?? 0) * weight;
+    }
     const suitabilityScore = config.suitabilityWeight * suitability;
 
     const arousalScore = recoveryNeed === 'none'

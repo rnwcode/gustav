@@ -14,6 +14,8 @@ Die YAML-Dateien hier dokumentieren weiterhin die erwartete Form
 - `skills/` — was der Hund lernen kann, mit Voraussetzungen und Zielstufen
   (Beispiele/Simulator-Fixtures, nicht die Produktions-DB)
 - `aktivitaeten/` — was in einem Tages-Slot landen kann (dito)
+- `import/` — CSV-Vorlagen für den tatsächlichen Weg in die DB (Supabase
+  Studios CSV-Import), siehe `import/README.md`
 - `planer.yaml` — **alle Stellschrauben des Planers**, versioniert
 
 ## Warum die Planerkonfiguration hier liegt
@@ -38,7 +40,9 @@ Gilt unverändert, auch wenn das Ziel jetzt eine Zeile in `aktivitaet`/
    (Validator noch offen, siehe `tool/validate.dart`)
 4. **Jede einzelne selbst lesen.** Dieser Schritt ist nicht delegierbar,
    bei Angst, Aggression und Sicherheit erst recht nicht.
-5. Direkt in `aktivitaet`/`skill` eintragen (Supabase Studio/SQL)
+5. Direkt in `aktivitaet`/`skill` eintragen — z. B. über `import/*.csv`
+   (Vorlage ausfüllen, per Supabase Studio importieren, siehe
+   `import/README.md`) oder von Hand im Table Editor
 
 ## Abdeckung
 

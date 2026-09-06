@@ -1,4 +1,4 @@
-import type { BodyType, BreedGroup, Origin, Restriction, SizeClass } from './enums.ts';
+import type { BodyType, BreedGroup, Gender, Origin, Restriction, SizeClass } from './enums.ts';
 
 /**
  * A dog's stored profile data. `lifeStage` and `heatSensitivity` are
@@ -19,8 +19,20 @@ export interface Dog {
   readonly arrivalDate: Date;
 
   readonly origin: Origin;
-  readonly breedGroup: BreedGroup;
+
+  /**
+   * Normalized weights (sum 1) across the dog's linked breeds — one entry
+   * for a purebred dog, several for a mixed breed
+   * (`docs/specs/rasse-modellieren.md`). Never empty.
+   */
+  readonly breedGroups: ReadonlyMap<BreedGroup, number>;
+
   readonly sizeClass: SizeClass;
   readonly bodyType: ReadonlySet<BodyType>;
   readonly restrictions: ReadonlySet<Restriction>;
+
+  /** `null` = not provided (e.g. an unpapered shelter dog) — informational
+   * only, no planner step reads these yet. */
+  readonly gender: Gender | null;
+  readonly neutered: boolean | null;
 }

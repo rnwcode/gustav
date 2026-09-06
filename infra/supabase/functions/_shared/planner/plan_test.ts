@@ -96,10 +96,12 @@ const dog: Dog = {
   birthDate: daysBefore(1825), // 5 years — well into adulthood
   arrivalDate: daysBefore(1825), // long past settling-in
   origin: 'breeder',
-  breedGroup: 'companion',
+  breedGroups: new Map([['companion', 1]]),
   sizeClass: 'medium',
   bodyType: new Set(),
   restrictions: new Set(),
+  gender: null,
+  neutered: null,
 };
 
 const household: Household = {

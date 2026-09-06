@@ -107,7 +107,7 @@ export function plan(args: {
   const scored = scoreActivities({
     pool: admissible,
     candidates,
-    breedGroup: dog.breedGroup,
+    breedGroups: dog.breedGroups,
     recoveryNeed: context.loadBudget.recoveryNeed,
     lastUsedByActivityId,
     today,

@@ -16,10 +16,12 @@ function dog(overrides: {
     birthDate,
     arrivalDate: overrides.arrivalDate ?? birthDate,
     origin: 'breeder',
-    breedGroup: 'herding',
+    breedGroups: new Map([['herding', 1]]),
     sizeClass: overrides.sizeClass ?? 'medium',
     bodyType: overrides.bodyType ?? new Set(),
     restrictions: new Set(),
+    gender: null,
+    neutered: null,
   };
 }
 

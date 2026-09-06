@@ -81,14 +81,14 @@ const today = new Date(2026, 2, 12);
 function run(overrides: {
   pool: readonly Activity[];
   candidates?: CandidatePool;
-  breedGroup?: BreedGroup;
+  breedGroups?: ReadonlyMap<BreedGroup, number>;
   recoveryNeed?: RecoveryNeed;
   lastUsedByActivityId?: ReadonlyMap<string, Date>;
 }) {
   return scoreActivities({
     pool: overrides.pool,
     candidates: overrides.candidates ?? { skills: [], needs: [] },
-    breedGroup: overrides.breedGroup ?? 'herding',
+    breedGroups: overrides.breedGroups ?? new Map([['herding', 1]]),
     recoveryNeed: overrides.recoveryNeed ?? 'none',
     lastUsedByActivityId: overrides.lastUsedByActivityId ?? new Map(),
     today,
@@ -161,12 +161,21 @@ Deno.test('new skill bonus', () => {
 Deno.test('suitability, missing entry counts as neutral', () => {
   const withEntry = run({
     pool: [activity({ id: 'a', suitability: new Map([['herding', 2]]) })],
-    breedGroup: 'herding',
+    breedGroups: new Map([['herding', 1]]),
   });
   assertAlmostEquals(withEntry[0]!.score, 2.0, 1e-9);
 
   const withoutEntry = run({ pool: [activity({ id: 'b', suitability: new Map() })] });
   assertAlmostEquals(withoutEntry[0]!.score, 0.0, 1e-9);
+});
+
+Deno.test('suitability for a mixed breed is the weighted sum across its groups', () => {
+  const result = run({
+    pool: [activity({ id: 'a', suitability: new Map([['herding', 2], ['hunting', -1]]) })],
+    breedGroups: new Map([['herding', 0.5], ['hunting', 0.5]]),
+  });
+  // 2 * 0.5 + (-1) * 0.5 = 0.5
+  assertAlmostEquals(result[0]!.score, 0.5, 1e-9);
 });
 
 Deno.test('the arousal penalty only applies once recovery need is elevated', () => {
@@ -200,7 +209,7 @@ Deno.test('everything combined', () => {
       skills: [focus({ skillId: 'recall', priority: 2, overdueDays: 14 })],
       needs: [],
     },
-    breedGroup: 'herding',
+    breedGroups: new Map([['herding', 1]]),
   });
   assertAlmostEquals(result[0]!.score, 11.0, 1e-9);
 });

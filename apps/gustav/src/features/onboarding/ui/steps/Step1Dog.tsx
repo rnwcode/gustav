@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-import { Body, Heading, TappableField, TextField } from '../../../../design/components';
+import { Body, Chip, ChipRow, Heading, Label, TappableField, TextField } from '../../../../design/components';
 import { spacing } from '../../../../design/tokens';
+import { GENDER_OPTIONS } from '../../domain/dog';
 import { useOnboardingStore } from '../../data/onboardingStore';
 import { formatDateDe, lifeStageHint } from '../lifeStageHint';
 
@@ -44,6 +45,28 @@ export function Step1Dog() {
           }}
         />
       ) : null}
+
+      <View style={styles.field}>
+        <Label>Geschlecht</Label>
+        <ChipRow>
+          {GENDER_OPTIONS.map((o) => (
+            <Chip
+              key={o.value}
+              label={o.label}
+              selected={draft.gender === o.value}
+              onPress={() => setDogBasics({ gender: o.value })}
+            />
+          ))}
+        </ChipRow>
+      </View>
+
+      <View style={styles.field}>
+        <Label>Kastriert</Label>
+        <ChipRow>
+          <Chip label="Ja" selected={draft.neutered === true} onPress={() => setDogBasics({ neutered: true })} />
+          <Chip label="Nein" selected={draft.neutered === false} onPress={() => setDogBasics({ neutered: false })} />
+        </ChipRow>
+      </View>
     </View>
   );
 }
@@ -51,4 +74,5 @@ export function Step1Dog() {
 const styles = StyleSheet.create({
   group: { gap: spacing.xl },
   intro: { gap: spacing.sm },
+  field: { gap: spacing.sm },
 });
