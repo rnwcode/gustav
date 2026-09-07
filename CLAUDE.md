@@ -148,15 +148,20 @@ Konfigurationswerte in `skill_text`/`activity_text` und `planner_config`
 
 ## Tonalität der nutzersichtbaren Texte
 
-Beschreiben, nicht anweisen. Die App behauptet nur, was sie belegen kann:
-was sie selbst geplant hat, was abgehakt wurde, was der Nutzer gesagt hat.
-Kein Streak-Druck, keine Ermahnung nach einer Pause, keine Schuldrhetorik.
-Der Nutzer trägt nie etwas ein, damit die App rechnen kann — er drückt einen
-Knopf, weil er selbst etwas davon hat.
+Die App hat eine eigene, warme Stimme — wie ein guter Freund, der kurz
+Bescheid gibt: mal humorvoll, mal einfach nur nett, nie aufdringlich. Das
+ist eine bewusste, spätere Entscheidung (siehe Git-Historie) — eine rein
+sachliche, beschreibende Tonalität fühlte sich kalt und technisch an.
+Trotzdem behauptet die App nur, was sie belegen kann: was sie selbst
+geplant hat, was abgehakt wurde, was der Nutzer gesagt hat — die Wärme
+liegt im Ton, nicht im Erfinden von Dingen. Kein Streak-Druck, keine
+Ermahnung nach einer Pause, keine Schuldrhetorik. Der Nutzer trägt nie
+etwas ein, damit die App rechnen kann — er drückt einen Knopf, weil er
+selbst etwas davon hat.
 
-**Gustav spricht nicht.** Gustav ist der Hund auf dem Icon und in den
-Illustrationen — das Gesicht des Produkts, nicht seine Stimme. Die App redet
-nie als Gustav, gibt keine Ratschläge in seiner Rolle und hat keine
-Maskottchen-Sprechblasen. Im Plan steht immer der Name des echten Hundes.
-Eine Charakterstimme wäre genau die Bevormundung, die das Produkt vermeiden
-will — nur mit Kuschelfaktor.
+**Gustav bleibt das Gesicht, nicht der Sprecher.** Gustav ist der Hund auf
+dem Icon und in den Illustrationen. Die App spricht nicht *als* Gustav
+("Gustav findet…", Sprechblasen mit seinem Namen) und gibt keine Ratschläge
+in seiner Rolle — im Plan steht immer der Name des echten Hundes. Die
+freundliche, persönliche Stimme gehört der App selbst, keiner erfundenen
+Maskottchen-Figur.
