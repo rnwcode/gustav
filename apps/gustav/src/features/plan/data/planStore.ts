@@ -16,6 +16,11 @@ type PlanState = {
    * (CLAUDE.md, Regel 10). */
   loadOrGeneratePlan: (dogId: string) => Promise<void>;
   setSlotResult: (slotId: string, result: SlotResult | null) => Promise<void>;
+  /** Fetches the daily frame text for one slot if it isn't cached yet
+   * (docs/specs/tagestext.md). No-ops if already present; on failure
+   * (offline, LLM down) the slot's `dayText` simply stays `null` and the
+   * UI falls back to the template — never surfaced as an error. */
+  ensureDayText: (slotId: string) => Promise<void>;
 };
 
 export const usePlanStore = create<PlanState>((set, get) => ({
@@ -57,6 +62,23 @@ export const usePlanStore = create<PlanState>((set, get) => ({
       await planRepository.setSlotResult(slotId, result);
     } catch (err) {
       set({ plan: { ...plan, slots: previous }, error: err instanceof Error ? err.message : 'unknown error' });
+    }
+  },
+
+  ensureDayText: async (slotId) => {
+    const { plan } = get();
+    const slot = plan?.slots.find((s) => s.id === slotId);
+    if (!plan || !slot || slot.dayText !== null) return;
+    try {
+      const dayText = await planRepository.fetchDayText(slotId);
+      const current = get().plan;
+      if (!current) return;
+      set({
+        plan: { ...current, slots: current.slots.map((s) => (s.id === slotId ? { ...s, dayText } : s)) },
+      });
+    } catch {
+      // Offline or the LLM call failed — the slot's dayText stays null and
+      // the UI falls back to the template (docs/specs/tagestext.md).
     }
   },
 }));

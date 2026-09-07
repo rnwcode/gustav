@@ -50,6 +50,9 @@ export type PlanSlot = {
   sentence: string | null;
   reason: PlanReason;
   result: SlotResult | null;
+  /** The AI-generated daily frame (`generate-day-text`, `docs/specs/tagestext.md`).
+   * `null` until generated (or offline) — the UI falls back to `sentence`/`reason` then. */
+  dayText: string | null;
 };
 
 /** One generated period — stored once, never recomputed on open
@@ -74,6 +77,7 @@ export function planSlotFromGeneratePlanResponse(json: any): PlanSlot {
       needDimension: json.reason.needDimension ?? null,
     },
     result: null,
+    dayText: null,
   };
 }
 

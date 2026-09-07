@@ -43,7 +43,9 @@ export const planRepository = {
 
     const { data: slotRows, error: slotError } = await supabase
       .from('slot')
-      .select('id, date, activity_id, reason_kind, reason_skill_id, reason_need_dimension, outcome')
+      .select(
+        'id, date, activity_id, reason_kind, reason_skill_id, reason_need_dimension, outcome, day_text',
+      )
       .eq('weekly_plan_id', weeklyPlanId)
       .order('date');
     if (slotError) throw slotError;
@@ -60,6 +62,7 @@ export const planRepository = {
         needDimension: row.reason_need_dimension,
       },
       result: row.outcome as SlotResult | null,
+      dayText: row.day_text as string | null,
     }));
 
     return {
@@ -88,5 +91,17 @@ export const planRepository = {
   async setSlotResult(slotId: string, result: SlotResult | null): Promise<void> {
     const { error } = await supabase.from('slot').update({ outcome: result }).eq('id', slotId);
     if (error) throw error;
+  },
+
+  /** Calls `generate-day-text` (`docs/specs/tagestext.md`) — only when a day
+   * is opened and no text is cached yet (the Edge Function itself never
+   * regenerates once `slot.day_text` is set). No network/offline: the
+   * caller keeps showing the template fallback, this simply throws. */
+  async fetchDayText(slotId: string): Promise<string> {
+    const { data, error } = await supabase.functions.invoke('generate-day-text', {
+      body: { slotId },
+    });
+    if (error) throw error;
+    return (data as { dayText: string }).dayText;
   },
 };

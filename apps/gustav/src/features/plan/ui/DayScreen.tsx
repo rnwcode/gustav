@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -20,9 +20,14 @@ export function DayScreen() {
   const router = useRouter();
   const plan = usePlanStore((s) => s.plan);
   const setSlotResult = usePlanStore((s) => s.setSlotResult);
+  const ensureDayText = usePlanStore((s) => s.ensureDayText);
 
   const today = useMemo(() => todayIso(), []);
   const slot = plan?.slots.find((s) => s.date === today) ?? null;
+
+  useEffect(() => {
+    if (slot?.id) ensureDayText(slot.id);
+  }, [slot?.id, ensureDayText]);
 
   return (
     <Screen edges={['bottom']}>
@@ -48,14 +53,20 @@ export function DayScreen() {
         <View style={styles.content}>
           <Label>Deine eine Sache</Label>
           <Title>Nichts.</Title>
-          <Body>Das ist die Übung. Morgen steht wieder etwas an.</Body>
+          <Body>{slot.dayText ?? 'Das ist die Übung. Morgen steht wieder etwas an.'}</Body>
         </View>
       ) : (
         <View style={styles.content}>
           <Label>Deine eine Sache</Label>
           <Title>{slot.title ?? 'Heutige Übung'}</Title>
-          {slot.sentence ? <Body>{slot.sentence}</Body> : null}
-          <Mono>{REASON_LABELS[slot.reason.kind]}</Mono>
+          {slot.dayText ? (
+            <Body>{slot.dayText}</Body>
+          ) : (
+            <>
+              {slot.sentence ? <Body>{slot.sentence}</Body> : null}
+              <Mono>{REASON_LABELS[slot.reason.kind]}</Mono>
+            </>
+          )}
 
           <View style={styles.actions}>
             <Button
