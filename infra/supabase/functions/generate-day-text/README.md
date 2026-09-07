@@ -30,10 +30,11 @@ LLM-Dienst fehlschlägt.
   `_shared/llm/day_text_prompt.ts` erwartet.
 - `../_shared/llm/day_text_prompt.ts` — `reminderIsDue` (reine Zeitfenster-Logik über
   `lead_time_days`) und `buildDayTextPrompt` (baut den Fakten-Prompt, keine Prosa).
-- `../_shared/llm/client.ts` — `LlmClient`-Interface, `HttpLlmClient` (OpenAI-kompatibel, lokal
-  Ollama, später ein extern gehosteter Dienst) und `FakeLlmClient` für Tests.
+- `../_shared/llm/client.ts` — `LlmClient`-Interface, `HttpLlmClient` (spricht Gemini über dessen
+  OpenAI-kompatible Schnittstelle) und `FakeLlmClient` für Tests.
 
 ## Lokal laufen lassen
 
-Siehe `infra/llm/README.md` für den Ollama-Container und die nötigen Env-Variablen (`LLM_ENDPOINT`,
-`LLM_MODEL`, optional `LLM_API_KEY`).
+`infra/supabase/.env.example` zeigt die nötigen Env-Variablen (`LLM_ENDPOINT`, `LLM_MODEL`,
+`LLM_API_KEY`) — als `.env` daneben mit einem echten Gemini-API-Key kopieren, dann
+`supabase functions serve generate-day-text --env-file .env`.

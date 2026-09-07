@@ -27,10 +27,15 @@ bleiben muss nur, *welche Daten* er verwendet hat — und die liegen bereits
 strukturiert in `slot` und der neuen `reminder`-Tabelle, nicht in der Prosa
 selbst.
 
-Der LLM-Dienst läuft anfangs lokal (Docker), soll aber ohne Codeänderung
-später auf einem separaten, extern gehosteten Server laufen können — die
-Function darf sich also nicht an "läuft lokal in Docker" binden, sondern nur
-an eine konfigurierbare HTTP-Schnittstelle.
+Der LLM-Dienst ist Gemini, über dessen OpenAI-kompatible Schnittstelle
+angesprochen — kein selbst betriebener lokaler LLM-Dienst. Ein früherer
+Anlauf mit einem lokalen Ollama-Container (`infra/llm/`) wurde wieder
+entfernt: Gemini ist schneller (~1–2s statt ~16s auf CPU), zuverlässiger
+beim Einhalten der Fakten (kleine lokale Modelle haben in Tests eigene
+Termine erfunden) und pro Anfrage im Cent-Bereich, während der lokale
+Container zusätzliche, dauerhaft zu pflegende Infrastruktur war (Docker,
+Auth-Proxy) ohne Netz-unabhängigen Anwendungsfall, der aktuell gebraucht
+wird.
 
 ## Verhalten
 
@@ -68,13 +73,12 @@ Gustav-Sprechen), ruft den LLM-Client auf, schreibt das Ergebnis in
 
 **LLM-Client-Abstraktion** (`_shared/llm/client.ts`): ein Interface
 `generateText(prompt: string): Promise<string>`. Die echte Implementierung
-spricht eine OpenAI-kompatible HTTP-Schnittstelle an (Ollama bietet das
-nativ unter `/v1/chat/completions`) — Basis-URL und optionaler API-Key
-kommen aus Env-Variablen (`LLM_ENDPOINT`, `LLM_API_KEY`). Lokal zeigt
-`LLM_ENDPOINT` auf einen Ollama-Container, später ohne Codeänderung auf den
-dann extern gehosteten Dienst — ein reiner Konfigurationswechsel, keine neue
-Abhängigkeit im Code (CLAUDE.md, Regel 8, sinngemäß auch hier: der Dienst,
-gegen den `generate-day-text` läuft, darf austauschbar bleiben).
+(`HttpLlmClient`) spricht Gemini über dessen OpenAI-kompatible
+Chat-Completions-Schnittstelle (`generativelanguage.googleapis.com/v1beta/openai`)
+an — Endpunkt, Modell und API-Key kommen aus Env-Variablen (`LLM_ENDPOINT`,
+`LLM_MODEL`, `LLM_API_KEY`, `infra/supabase/.env.example`), nie fest im
+Code. Absicherung ist damit Googles Sache, nicht unsere: der API-Key ist
+das Auth, es gibt keine eigene Infrastruktur davor.
 
 Für `deno test` und den Simulator: ein `FakeLlmClient` mit fest
 programmierten Antworten — kein echter Netzwerkzugriff in Tests, analog zur
@@ -84,21 +88,6 @@ injizierten Zeitquelle (Regel 2), nur gegen Nichtdeterminismus statt Zeit.
 wenn `slot.day_text` noch `null` ist. Ist bereits ein Text vorhanden, wird
 er nicht automatisch neu erzeugt (Kosten, Nichtdeterminismus begrenzen) —
 ein manuelles "neu generieren" wäre ein späteres, eigenes Feature.
-
-**Lokale Infrastruktur** (`infra/llm/`): ein in sich geschlossener
-Ollama-Container, Modell beim Image-Build eingebacken (kein separater
-`ollama pull`). `generate-day-text` braucht nur eine erreichbare
-`LLM_ENDPOINT` — ob das lokal der Docker-Container oder später ein
-Remote-Dienst ist, ändert am Code nichts.
-
-**Absicherung**: Ollama prüft nie selbst einen Schlüssel. Deshalb ist es in
-`infra/llm/docker-compose.yml` nie direkt erreichbar (`expose:`, kein
-`ports:`) — ein Auth-Proxy (Caddy, `infra/llm/Caddyfile`) davor lässt nur
-Anfragen mit passendem `Authorization: Bearer $LLM_API_KEY` durch, alles
-andere bekommt `401`, bevor Ollama die Anfrage je sieht. Dieselbe Aufteilung
-bleibt gültig, sobald der Dienst extern gehostet wird — nur die Adresse im
-Caddyfile wird eine echte Domain (automatisches TLS-Zertifikat über Caddy),
-was noch aussteht, bis ein Hosting-Ort feststeht (siehe „Nicht dazu gehört").
 
 **Systemprompt** (Ausgangspunkt, `_shared/llm/day_text_prompt.ts`):
 
@@ -176,9 +165,8 @@ leicht überarbeiten lässt (z. B. mit einer Hundetrainerin abgestimmt).
   (`slot`, `reminder`) müssen nachvollziehbar bleiben, nicht der Wortlaut.
 - Den heutigen Client-seitigen Template-Text (`docs/specs/texten.md`)
   abzuschaffen — er bleibt als Offline-/Fallback-Pfad bestehen.
-- TLS/eine echte Domain für den Auth-Proxy — sinnvoll erst, sobald ein
-  Hosting-Ort für den externen LLM-Dienst feststeht (siehe „Verhalten",
-  Absicherung).
+- Ein selbst betriebener LLM-Dienst (lokal oder gehostet) — Gemini deckt
+  das ab, siehe „Warum".
 
 ## Offene Fragen
 

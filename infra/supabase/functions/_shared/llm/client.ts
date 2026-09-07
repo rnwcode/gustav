@@ -1,9 +1,9 @@
 /**
  * The one seam between `generate-day-text` and whatever actually produces
- * prose. `HttpLlmClient` below talks to an OpenAI-compatible HTTP endpoint
- * (Ollama serves one natively, `/v1/chat/completions`) — swapping the local
- * Ollama container for a later externally hosted service is a `LLM_ENDPOINT`
- * change, not a code change (`docs/specs/tagestext.md`).
+ * prose. `HttpLlmClient` below talks Gemini's OpenAI-compatible
+ * chat-completions endpoint (`docs/specs/tagestext.md`) — a different
+ * OpenAI-compatible provider is a `LLM_ENDPOINT`/`LLM_MODEL` change, not a
+ * code change.
  */
 export interface LlmClient {
   generateText(
@@ -11,11 +11,7 @@ export interface LlmClient {
   ): Promise<string>;
 }
 
-/**
- * Talks to an OpenAI-compatible chat-completions endpoint. Used for both
- * the local Ollama container and, later, an externally hosted service —
- * neither is baked into this class, only `baseUrl`/`apiKey`/`model` are.
- */
+/** Talks to Gemini's OpenAI-compatible chat-completions endpoint. */
 export class HttpLlmClient implements LlmClient {
   constructor(
     private readonly config: {
