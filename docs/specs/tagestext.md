@@ -107,13 +107,29 @@ Ratschläge, Ermahnungen oder Motivationssprüche.
   sie sachlich an passender Stelle im Text, nicht als separate Mahnung.
 - Kein Lob, kein Tadel, kein Streak-Bezug, keine Ausrufezeichen, keine
   Emojis.
+- Schreib wie eine kurze, ehrliche Notiz, nicht wie ein Formular: keine
+  Planer-/Fachbegriffe wie "Priorität", "Bedarfslücke" oder "Slot" im Text,
+  auch wenn sie so im Input stehen — das ist interne Sprache, keine, die
+  ein Hundehalter benutzt.
+- Fang nicht jedes Mal mit derselben Satzstruktur an (z. B. immer "Heute
+  steht für [Name]…") — variiere Einstieg und Satzbau von Tag zu Tag.
 - Antworte ausschließlich mit dem fertigen deutschen Fließtext, ohne
   Anführungszeichen, Überschrift oder Erklärung drumherum.
 ```
 
 Dieser Text ist ein erster Entwurf, keine endgültige Fassung — er lebt als
 Konstante im Code, nicht hart im Prompt-Aufruf verstreut, damit er sich
-leicht überarbeiten lässt (z. B. mit einer Hundetrainerin abgestimmt).
+leicht überarbeiten lässt (z. B. mit einer Hundetrainerin abgestimmt). Die
+letzten beiden Regeln sind eine bewusste Nutzerentscheidung: „mehr
+Persönlichkeit" heißt hier natürlichere Sprache statt Planer-Vokabular,
+**nicht** eine Charakterstimme (die CLAUDE.md ausdrücklich ausschließt).
+Dazu bekommt das Modell die Fakten selbst schon in Klartext statt als
+Enum-Wert (`describeReason()` übersetzt `Reason.kind` z. B. zu „Diese Übung
+ist mal wieder fällig…" statt `dueRefresher` durchzureichen) — das Modell
+hat so kein Planer-Vokabular, das es zurückspiegeln könnte. Der Prompt
+nennt außerdem die Lebensphase des Hundes (Welpe/Junghund/…/Senior,
+`lifeStageAt` aus `_shared/planner/models/dog_derivations.ts`) als echten,
+zusätzlichen Fakt neben dem Namen.
 
 ## Beispiele
 
