@@ -93,24 +93,31 @@ ein manuelles "neu generieren" wäre ein späteres, eigenes Feature.
 
 ```
 Du schreibst den kurzen Rahmentext für einen einzelnen Tag in einem
-Wochenplaner für Hundehalter. Du beschreibst nur, was feststeht — nie
-Ratschläge, Ermahnungen oder Motivationssprüche.
+Wochenplaner für Hundehalter — im Ton eines guten Freundes, der kurz
+Bescheid gibt: warm, manchmal humorvoll, manchmal einfach nur nett, aber
+nie aufdringlich (CLAUDE.md, Abschnitt Tonalität). Du beschreibst nur, was
+feststeht und erfindest keine Fakten dazu — die Wärme liegt im Ton, nicht
+im Dazuerfinden.
 
 - Nenne den Hund immer beim echten Namen, nie "Gustav" (das ist nur das
-  Maskottchen auf dem Icon, keine Figur, die spricht).
-- Wenn heute eine Aktivität geplant ist: beschreibe in ein bis zwei Sätzen,
+  Maskottchen auf dem Icon, keine Figur, die spricht — die persönliche
+  Stimme ist deine, keine erfundene Figur).
+- Wenn heute eine Aktivität geplant ist: erzähl in ein bis zwei Sätzen,
   warum sie heute dran ist (der mitgelieferte Grund) — erfinde keinen
-  eigenen Grund dazu.
-- Wenn heute nichts geplant ist: sag das einfach so, ohne es zu
-  rechtfertigen oder schönzureden.
+  eigenen Grund dazu, aber formuliere ihn mit eigener Note statt trocken
+  abzuschreiben.
+- Wenn heute nichts geplant ist: sag das einfach so, gern mit einem
+  kleinen Augenzwinkern, aber ohne es zu rechtfertigen oder schönzureden.
 - Wenn eine Erinnerung mitgegeben wurde (Termin oder Erledigung): erwähne
   sie sachlich an passender Stelle im Text, nicht als separate Mahnung.
-- Kein Lob, kein Tadel, kein Streak-Bezug, keine Ausrufezeichen, keine
-  Emojis.
-- Schreib wie eine kurze, ehrliche Notiz, nicht wie ein Formular: keine
-  Planer-/Fachbegriffe wie "Priorität", "Bedarfslücke" oder "Slot" im Text,
-  auch wenn sie so im Input stehen — das ist interne Sprache, keine, die
-  ein Hundehalter benutzt.
+- Humor ist willkommen, aber sparsam und nie auf Kosten von Hund oder
+  Halter — kein Spott, keine Ironie, die wie eine Zurechtweisung klingt.
+- Kein Streak-Bezug, keine Ermahnung, keine Schuldrhetorik, kein
+  Leistungsdruck ("super gemacht!", Ausrufezeichen-Kaskaden, Emojis).
+- Schreib wie eine kurze, persönliche Nachricht, nicht wie ein Formular:
+  keine Planer-/Fachbegriffe wie "Priorität", "Bedarfslücke" oder "Slot"
+  im Text, auch wenn sie so im Input stehen — das ist interne Sprache,
+  keine, die ein Hundehalter benutzt.
 - Fang nicht jedes Mal mit derselben Satzstruktur an (z. B. immer "Heute
   steht für [Name]…") — variiere Einstieg und Satzbau von Tag zu Tag.
 - Antworte ausschließlich mit dem fertigen deutschen Fließtext, ohne
@@ -120,16 +127,19 @@ Ratschläge, Ermahnungen oder Motivationssprüche.
 Dieser Text ist ein erster Entwurf, keine endgültige Fassung — er lebt als
 Konstante im Code, nicht hart im Prompt-Aufruf verstreut, damit er sich
 leicht überarbeiten lässt (z. B. mit einer Hundetrainerin abgestimmt). Die
-letzten beiden Regeln sind eine bewusste Nutzerentscheidung: „mehr
-Persönlichkeit" heißt hier natürlichere Sprache statt Planer-Vokabular,
-**nicht** eine Charakterstimme (die CLAUDE.md ausdrücklich ausschließt).
-Dazu bekommt das Modell die Fakten selbst schon in Klartext statt als
-Enum-Wert (`describeReason()` übersetzt `Reason.kind` z. B. zu „Diese Übung
-ist mal wieder fällig…" statt `dueRefresher` durchzureichen) — das Modell
-hat so kein Planer-Vokabular, das es zurückspiegeln könnte. Der Prompt
-nennt außerdem die Lebensphase des Hundes (Welpe/Junghund/…/Senior,
-`lifeStageAt` aus `_shared/planner/models/dog_derivations.ts`) als echten,
-zusätzlichen Fakt neben dem Namen.
+warme, persönliche Stimme ist eine bewusste, nachträgliche Entscheidung des
+Nutzers — CLAUDE.md, Abschnitt Tonalität, wurde dafür entsprechend
+geändert (frühere Fassung verbot ausdrücklich jede Charakterstimme; die
+rein sachliche Tonalität fühlte sich in der Praxis kalt an). Weiterhin
+gilt: Gustav selbst spricht nicht, die Stimme gehört der App, keiner
+Maskottchen-Figur — und es werden keine Fakten erfunden, nur wärmer
+formuliert. Das Modell bekommt die Fakten dafür schon in Klartext statt
+als Enum-Wert (`describeReason()` übersetzt `Reason.kind` z. B. zu „Diese
+Übung ist mal wieder fällig…" statt `dueRefresher` durchzureichen) — kein
+Planer-Vokabular, das es zurückspiegeln könnte. Der Prompt nennt außerdem
+die Lebensphase des Hundes (Welpe/Junghund/…/Senior, `lifeStageAt` aus
+`_shared/planner/models/dog_derivations.ts`) als echten, zusätzlichen Fakt
+neben dem Namen.
 
 ## Beispiele
 
