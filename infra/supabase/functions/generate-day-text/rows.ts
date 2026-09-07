@@ -10,7 +10,14 @@ export interface SlotRow {
   readonly reason_need_dimension: string | null;
   readonly day_text: string | null;
   readonly day_text_generated_at: string | null;
-  readonly weekly_plan: { readonly dog_id: string; readonly dog: { readonly name: string } };
+  readonly weekly_plan: {
+    readonly dog_id: string;
+    readonly dog: {
+      readonly name: string;
+      readonly birth_date: string;
+      readonly size_class: string;
+    };
+  };
 }
 
 export interface ReminderRow {

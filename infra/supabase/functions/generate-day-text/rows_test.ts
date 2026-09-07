@@ -11,7 +11,10 @@ const BASE_SLOT: SlotRow = {
   reason_need_dimension: null,
   day_text: null,
   day_text_generated_at: null,
-  weekly_plan: { dog_id: 'dog-1', dog: { name: 'Nala' } },
+  weekly_plan: {
+    dog_id: 'dog-1',
+    dog: { name: 'Nala', birth_date: '2023-01-01', size_class: 'medium' },
+  },
 };
 
 Deno.test('reasonFromSlotRow maps reason_* columns onto Reason', () => {

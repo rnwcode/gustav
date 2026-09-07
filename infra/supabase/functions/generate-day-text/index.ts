@@ -8,6 +8,8 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { FakeClock, systemClock } from '../_shared/planner/clock.ts';
 import type { Clock } from '../_shared/planner/clock.ts';
+import { lifeStageAt } from '../_shared/planner/models/dog_derivations.ts';
+import type { SizeClass } from '../_shared/planner/models/enums.ts';
 import {
   buildDayTextPrompt,
   reminderIsDue,
@@ -73,7 +75,7 @@ Deno.serve(async (req: Request) => {
   // own dog — the query itself carries no additional owner filter.
   const { data: slotRow, error: slotError } = await supabase
     .from('slot')
-    .select('*, weekly_plan:weekly_plan_id(dog_id, dog:dog_id(name))')
+    .select('*, weekly_plan:weekly_plan_id(dog_id, dog:dog_id(name, birth_date, size_class))')
     .eq('id', body.slotId)
     .maybeSingle();
   if (slotError) {
@@ -123,8 +125,17 @@ Deno.serve(async (req: Request) => {
     .filter((reminder) => reminderIsDue(reminder, today))
     .map((reminder) => ({ kind: reminder.kind, dueDate: reminder.dueDate }));
 
+  const dogLifeStage = lifeStageAt(
+    {
+      birthDate: new Date(slot.weekly_plan.dog.birth_date),
+      sizeClass: slot.weekly_plan.dog.size_class as SizeClass,
+    },
+    today,
+  );
+
   const userPrompt = buildDayTextPrompt({
     dogName: slot.weekly_plan.dog.name,
+    dogLifeStage,
     date: new Date(slot.date),
     reason: reasonFromSlotRow(slot),
     activity,

@@ -28,18 +28,32 @@ Deno.test('reminderIsDue: a done reminder is never due, however close the date',
 Deno.test('buildDayTextPrompt: empty day, no reminders', () => {
   const prompt = buildDayTextPrompt({
     dogName: 'Bello',
+    dogLifeStage: 'adult',
     date: new Date('2026-01-15'),
     reason: { kind: 'empty', skillId: null, needDimension: null },
     activity: null,
     dueReminders: NO_REMINDERS,
   });
   assertEquals(prompt.includes('Bello'), true);
-  assertEquals(prompt.includes('kein Slot') || prompt.includes('nichts geplant'), true);
+  assertEquals(prompt.includes('nichts geplant'), true);
 });
 
-Deno.test('buildDayTextPrompt: an activity carries its reason and sentence', () => {
+Deno.test('buildDayTextPrompt: the life stage is named in plain German', () => {
+  const prompt = buildDayTextPrompt({
+    dogName: 'Bello',
+    dogLifeStage: 'adolescent',
+    date: new Date('2026-01-15'),
+    reason: { kind: 'empty', skillId: null, needDimension: null },
+    activity: null,
+    dueReminders: NO_REMINDERS,
+  });
+  assertEquals(prompt.includes('Junghund'), true);
+});
+
+Deno.test('buildDayTextPrompt: an activity carries its sentence and a plain-language reason, no jargon', () => {
   const prompt = buildDayTextPrompt({
     dogName: 'Nala',
+    dogLifeStage: 'adult',
     date: new Date('2026-01-15'),
     reason: { kind: 'dueRefresher', skillId: 'recall', needDimension: null },
     activity: { title: 'Rückruf üben', sentence: 'Rückruf an der Schleppleine, mit Ablenkung.' },
@@ -47,18 +61,37 @@ Deno.test('buildDayTextPrompt: an activity carries its reason and sentence', () 
   });
   assertEquals(prompt.includes('Rückruf üben'), true);
   assertEquals(prompt.includes('Rückruf an der Schleppleine'), true);
-  assertEquals(prompt.includes('recall'), true);
-  assertEquals(prompt.includes('dueRefresher'), true);
+  assertEquals(prompt.includes('fällig'), true);
+  // No raw enum values or internal ids leak into the prompt — those are
+  // planner vocabulary, not something to phrase prose around.
+  assertEquals(prompt.includes('dueRefresher'), false);
+  assertEquals(prompt.includes('recall'), false);
 });
 
-Deno.test('buildDayTextPrompt: due reminders are listed with their kind and date', () => {
+Deno.test('buildDayTextPrompt: a needGap reason names the need dimension in plain language', () => {
   const prompt = buildDayTextPrompt({
     dogName: 'Nala',
+    dogLifeStage: 'adult',
+    date: new Date('2026-01-15'),
+    reason: { kind: 'needGap', skillId: null, needDimension: 'scent' },
+    activity: { title: 'Schnüffelteppich', sentence: 'Leckerlis im Teppich suchen.' },
+    dueReminders: NO_REMINDERS,
+  });
+  assertEquals(prompt.includes('Nasenarbeit'), true);
+  assertEquals(prompt.includes('needGap'), false);
+  assertEquals(prompt.includes('scent'), false);
+});
+
+Deno.test('buildDayTextPrompt: due reminders are listed in plain language with their date', () => {
+  const prompt = buildDayTextPrompt({
+    dogName: 'Nala',
+    dogLifeStage: 'adult',
     date: new Date('2026-01-15'),
     reason: { kind: 'empty', skillId: null, needDimension: null },
     activity: null,
     dueReminders: [{ kind: 'vaccination', dueDate: new Date('2026-01-16') }],
   });
-  assertEquals(prompt.includes('vaccination'), true);
+  assertEquals(prompt.includes('Impftermin'), true);
   assertEquals(prompt.includes('2026-01-16'), true);
+  assertEquals(prompt.includes('vaccination'), false);
 });

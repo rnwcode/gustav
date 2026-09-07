@@ -8,7 +8,7 @@ import { daysBetween } from '../time.ts';
  * system clock (CLAUDE.md, rule 2).
  */
 
-export function ageInWeeksAt(dog: Dog, today: Date): number {
+export function ageInWeeksAt(dog: Pick<Dog, 'birthDate'>, today: Date): number {
   return Math.floor(daysBetween(dog.birthDate, today) / 7);
 }
 
@@ -22,7 +22,7 @@ export function ageInWeeksAt(dog: Dog, today: Date): number {
  * first few weeks is handled by the planner's settling-in rule
  * (`content/planer.yaml`, `eingewoehnung_wochen`), not by the life stage.
  */
-export function lifeStageAt(dog: Dog, today: Date): LifeStage {
+export function lifeStageAt(dog: Pick<Dog, 'birthDate' | 'sizeClass'>, today: Date): LifeStage {
   const ageWeeks = ageInWeeksAt(dog, today);
   if (ageWeeks < 16) return 'puppy';
   if (ageWeeks < 30) return 'adolescent';
