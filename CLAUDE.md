@@ -52,14 +52,17 @@ an dieser Architekturgrenze ändert er nichts.
    Abstand von dort, nie als Literal im Screen-Code.
 
 5. Content ist Daten, nie Code. Übungen und Skills leben in den Tabellen
-   `aktivitaet`/`skill` (`infra/supabase/migrations/0002_content.sql`) und
-   werden dort direkt gepflegt (Supabase Studio/SQL) — niemals als Literale
-   im Code der Edge Functions. Kein Import-Schritt aus Dateien: die DB ist
-   die Quelle der Wahrheit, nicht ein Build-Artefakt daraus. `content/`
-   (YAML, `content/schema/`) dokumentiert weiterhin die erwartete Form und
-   dient dem Simulator/Tests als synthetischer Katalog — ein Seed aus
-   Dateien in die Produktions-DB kann später zurückkommen, ist aber bewusst
-   kein Ziel gerade jetzt.
+   `activity`/`skill` (`infra/supabase/migrations/0002_content.sql`) und
+   werden dort direkt gepflegt — niemals als Literale im Code der Edge
+   Functions. Kein Import-Schritt aus Dateien: die DB ist die Quelle der
+   Wahrheit, nicht ein Build-Artefakt daraus. Gepflegt wird entweder direkt
+   in Supabase Studio/SQL oder über `tools/content-admin/` (lokales
+   Next.js-Tool gegen die gehostete DB, `docs/specs/content-admin.md`) —
+   beide Wege schreiben dieselben Tabellen, keiner ist eine zusätzliche
+   Quelle der Wahrheit. `content/` (YAML, `content/schema/`) dokumentiert
+   weiterhin die erwartete Form und dient dem Simulator/Tests als
+   synthetischer Katalog — ein Seed aus Dateien in die Produktions-DB kann
+   später zurückkommen, ist aber bewusst kein Ziel gerade jetzt.
 
 6. Änderungen an `infra/supabase/functions/` nur, wenn danach `deno test` UND
    der Simulator (`--check`) grün sind. Die Gewichte in
