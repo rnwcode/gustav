@@ -70,8 +70,8 @@ Gustav-Sprechen), ruft den LLM-Client auf, schreibt das Ergebnis in
 `generateText(prompt: string): Promise<string>`. Die echte Implementierung
 spricht eine OpenAI-kompatible HTTP-Schnittstelle an (Ollama bietet das
 nativ unter `/v1/chat/completions`) — Basis-URL und optionaler API-Key
-kommen aus Env-Variablen (`LLM_BASE_URL`, `LLM_API_KEY`). Lokal zeigt
-`LLM_BASE_URL` auf einen Ollama-Container, später ohne Codeänderung auf den
+kommen aus Env-Variablen (`LLM_ENDPOINT`, `LLM_API_KEY`). Lokal zeigt
+`LLM_ENDPOINT` auf einen Ollama-Container, später ohne Codeänderung auf den
 dann extern gehosteten Dienst — ein reiner Konfigurationswechsel, keine neue
 Abhängigkeit im Code (CLAUDE.md, Regel 8, sinngemäß auch hier: der Dienst,
 gegen den `generate-day-text` läuft, darf austauschbar bleiben).
@@ -88,7 +88,7 @@ ein manuelles "neu generieren" wäre ein späteres, eigenes Feature.
 **Lokale Infrastruktur** (`infra/llm/`): ein in sich geschlossener
 Ollama-Container, Modell beim Image-Build eingebacken (kein separater
 `ollama pull`). `generate-day-text` braucht nur eine erreichbare
-`LLM_BASE_URL` — ob das lokal der Docker-Container oder später ein
+`LLM_ENDPOINT` — ob das lokal der Docker-Container oder später ein
 Remote-Dienst ist, ändert am Code nichts.
 
 **Absicherung**: Ollama prüft nie selbst einen Schlüssel. Deshalb ist es in

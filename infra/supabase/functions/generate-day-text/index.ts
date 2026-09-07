@@ -37,7 +37,7 @@ function resolveClock(body: RequestBody): Clock {
 }
 
 function resolveLlmClient(): LlmClient {
-  const baseUrl = Deno.env.get('LLM_BASE_URL') ?? '';
+  const baseUrl = Deno.env.get('LLM_ENDPOINT') ?? '';
   const model = Deno.env.get('LLM_MODEL') ?? '';
   const apiKey = Deno.env.get('LLM_API_KEY') ?? null;
   return new HttpLlmClient({ baseUrl, apiKey, model });

@@ -2,7 +2,7 @@
  * The one seam between `generate-day-text` and whatever actually produces
  * prose. `HttpLlmClient` below talks to an OpenAI-compatible HTTP endpoint
  * (Ollama serves one natively, `/v1/chat/completions`) — swapping the local
- * Ollama container for a later externally hosted service is a `LLM_BASE_URL`
+ * Ollama container for a later externally hosted service is a `LLM_ENDPOINT`
  * change, not a code change (`docs/specs/tagestext.md`).
  */
 export interface LlmClient {
